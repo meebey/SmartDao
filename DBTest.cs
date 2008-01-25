@@ -49,7 +49,7 @@ namespace Meebey.SmartDao
         [Column(Name = "datetime_column_nullable")]
         private DateTime? _DateTimeColumnNullable;
         
-        [PrimaryKey(Name = "pk_int32")]
+        [PrimaryKey]
         [Column(Name = "pk_int32")]
         private Int32 _PKInt32;
         
@@ -59,6 +59,30 @@ namespace Meebey.SmartDao
             }
             set {
                 _StringColumn = value;
+            }
+        }
+
+        public Nullable<DateTime> DateTimeColumnNullable {
+            get {
+                return _DateTimeColumnNullable;
+            }
+        }
+
+        public DateTime DateTimeColumn {
+            get {
+                return _DateTimeColumn;
+            }
+            set {
+                _DateTimeColumn = value;
+            }
+        }
+
+        public int PKInt32 {
+            get {
+                return _PKInt32;
+            }
+            set {
+                _PKInt32 = value;
             }
         }
         

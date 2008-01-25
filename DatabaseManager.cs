@@ -12,9 +12,9 @@ namespace Meebey.SmartDao
         private static readonly log4net.ILog _Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 #endif
         private IDbConnection _DBConnection;
-        private SqlProvider   _SqlProvider;
+        private ISqlProvider   _SqlProvider;
         
-        public SqlProvider SqlProvider {
+        public ISqlProvider SqlProvider {
             get {
                 return _SqlProvider;
             }
@@ -30,7 +30,7 @@ namespace Meebey.SmartDao
         {
         }
         
-        public DatabaseManager(IDbConnection dbConnection, SqlProvider sqlProvider)
+        public DatabaseManager(IDbConnection dbConnection, ISqlProvider sqlProvider)
         {
             if (dbConnection == null) {
                 throw new ArgumentNullException("dbConnection");
@@ -38,7 +38,9 @@ namespace Meebey.SmartDao
 
             _DBConnection = dbConnection;
             if (sqlProvider == null) {
-                _SqlProvider = new SqlProvider();
+                _SqlProvider = new AnsiSqlProvider();
+            } else {
+                _SqlProvider = sqlProvider;
             }
         }
         
@@ -58,6 +60,50 @@ namespace Meebey.SmartDao
                 TableAttribute attr = (TableAttribute) attrs[0];
                 InitTable(type, attr);
             }
+        }
+        
+        public void EmptyTable(Type tableType)
+        {
+            if (tableType == null) {
+                throw new ArgumentNullException("tableType");
+            }
+            
+            object[] attrs = tableType.GetCustomAttributes(typeof(TableAttribute), true);
+            if (attrs == null || attrs.Length == 0) {
+                throw new ArgumentException("Type does not contain a TableAttribute.", "tableType");
+            }
+            
+            TableAttribute attr = (TableAttribute) attrs[0];
+            
+            string sql = _SqlProvider.GetDeleteStatement(attr.Name, null);
+#if LOG4NET
+            _Logger.Debug("EmptyTable(): SQL: " + sql);
+#endif
+            IDbCommand com = _DBConnection.CreateCommand();
+            com.CommandText = sql;
+            com.ExecuteNonQuery();
+        }
+        
+        public void DropTable(Type tableType)
+        {
+            if (tableType == null) {
+                throw new ArgumentNullException("tableType");
+            }
+            
+            object[] attrs = tableType.GetCustomAttributes(typeof(TableAttribute), true);
+            if (attrs == null || attrs.Length == 0) {
+                throw new ArgumentException("Type does not contain a TableAttribute.", "tableType");
+            }
+            
+            TableAttribute attr = (TableAttribute) attrs[0];
+            
+            string sql = _SqlProvider.GetDropTableStatement(attr.Name);
+#if LOG4NET
+            _Logger.Debug("DropTable(): SQL: " + sql);
+#endif
+            IDbCommand com = _DBConnection.CreateCommand();
+            com.CommandText = sql;
+            com.ExecuteNonQuery();
         }
         
         public void CreateTable(Type tableType)
@@ -95,21 +141,28 @@ namespace Meebey.SmartDao
                 if (columnAttrs == null || columnAttrs.Length == 0) {
                     continue;
                 }
-                
                 ColumnAttribute columnAttr = (ColumnAttribute) columnAttrs [0];
+                
                 columnNames.Add(columnAttr.Name);
                 columnTypes.Add(field.FieldType);
                 columnLengths.Add(columnAttr.Length);
+            
+                object[] pkAttrs = field.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
+                if (pkAttrs == null || pkAttrs.Length == 0) {
+                    continue;
+                }
+                PrimaryKeyAttribute pkAttr = (PrimaryKeyAttribute) pkAttrs [0];
+                primaryKeyColumns.Add(columnAttr.Name);
             }
             if (columnNames.Count == 0) {
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "tableType");
             }
             
-            string sql = _SqlProvider.GetCreateStatement(tableAttribute.Name,
-                                                         columnNames,
-                                                         columnTypes,
-                                                         columnLengths,
-                                                         primaryKeyColumns);
+            string sql = _SqlProvider.GetCreateTableStatement(tableAttribute.Name,
+                                                              columnNames,
+                                                              columnTypes,
+                                                              columnLengths,
+                                                              primaryKeyColumns);
 #if LOG4NET
             _Logger.Debug("CreateTable(): SQL: " + sql);
 #endif
@@ -126,7 +179,7 @@ namespace Meebey.SmartDao
 
             object[] attrs = tableType.GetCustomAttributes(typeof(TableAttribute), true);
             if (attrs == null || attrs.Length == 0) {
-                throw new ArgumentException("tableType", "does not contain TableAttribute.");
+                throw new ArgumentException("tableType", "Type does not contain TableAttribute.");
             }
             
             TableAttribute attr = (TableAttribute) attrs[0];
@@ -142,7 +195,7 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("tableAttribute");
             }
 
-            if (!TableExists(tableAttribute.Name)) {
+            if (!TableExists(tableType)) {
 #if LOG4NET
                 _Logger.Debug("InitTable(): creating table: " + tableAttribute.Name);
 #endif
@@ -155,24 +208,40 @@ namespace Meebey.SmartDao
             }
         }
 
-        public virtual bool TableExists(string tableName)
+        public virtual bool TableExists(Type tableType)
         {
-            if (tableName == null) {
-                throw new ArgumentNullException("tableName");
+            if (tableType == null) {
+                throw new ArgumentNullException("tableType");
             }
             
+            object[] attrs = tableType.GetCustomAttributes(typeof(TableAttribute), true);
+            if (attrs == null || attrs.Length == 0) {
+                throw new ArgumentException("tableType", "Type does not contain TableAttribute.");
+            }
+            
+            TableAttribute attr = (TableAttribute) attrs[0];
+            
+            List<string> columns = new List<string>(new string[] {"COUNT(*)"});
+            string sql = _SqlProvider.GetSelectStatement("INFORMATION_SCHEMA.TABLES", columns, "TABLE_NAME = @table_name");
+#if LOG4NET
+            _Logger.Debug("TableExists(): SQL: " + sql);
+#endif
             IDbCommand com = _DBConnection.CreateCommand();
-            com.CommandText = "SELECT COUNT(*) "+
-                              "FROM INFORMATION_SCHEMA.TABLES " +
-                              "WHERE TABLE_NAME = @table_name";
+            com.CommandText = sql;
             IDbDataParameter param = com.CreateParameter();
             param.ParameterName = "@table_name";
             param.DbType = DbType.String;
-            param.Value = tableName;
+            param.Value = attr.Name;
             com.Parameters.Add(param);
             
-            Int64 count = (Int64) com.ExecuteScalar();
-            return count > 0;
+            object res = com.ExecuteScalar();
+            if (res is Int32) {
+                return (Int32) res > 0; 
+            } else if (res is Int64) {
+                return (Int64) res > 0;
+            }
+            
+            throw new NotSupportedException("Unsupported type returned by COUNT(*): " + res.GetType());
         }
         
         public virtual Query<T> CreateQuery<T>()
@@ -194,6 +263,56 @@ namespace Meebey.SmartDao
                 parameter.Value = columnValues[idx];
                 command.Parameters.Add(parameter);
             }
+            return command;
+        }
+
+        public virtual IDbCommand CreateSelectCommand(string tableName,
+                                                      IList<string> selectColumnNames,
+                                                      IList<string> whereColumnNames,
+                                                      IList<object> whereColumnValues) {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            if (selectColumnNames == null) {
+                throw new ArgumentNullException("selectColumnNames");
+            }
+            if (whereColumnNames == null) {
+                throw new ArgumentNullException("whereColumnNames");
+            }
+            if (whereColumnValues == null) {
+                throw new ArgumentNullException("whereColumnValues");
+            }
+            
+            StringBuilder whereClause = new StringBuilder();
+            IDbCommand command = _DBConnection.CreateCommand();
+            for (int idx = 0; idx < whereColumnNames.Count; idx++) {
+                string name = whereColumnNames[idx];
+                object value = whereColumnValues[idx];
+                
+                whereClause.Append(_SqlProvider.GetColumnName(name));
+                if (value is string) {
+                    string strValue = (string) value;
+                    if (strValue.StartsWith("%") || strValue.EndsWith("%")) {
+                        whereClause.Append(" LIKE ");
+                    } else {
+                        whereClause.Append(" = ");
+                    }
+                } else {
+                    whereClause.Append(" = ");
+                }
+                whereClause.AppendFormat("@{0} AND ", idx);
+                
+                IDbDataParameter parameter = command.CreateParameter();
+                parameter.ParameterName = String.Format("@{0}", idx);
+                // HACK: map CLI type to DbType
+                parameter.DbType = DbType.String;
+                parameter.Value = value;
+                command.Parameters.Add(parameter);
+            }
+            whereClause.Remove(whereClause.Length - 4, 4);
+            
+            string sql = _SqlProvider.GetSelectStatement(tableName, selectColumnNames, whereClause.ToString());
+            command.CommandText = sql;
             return command;
         }
     }

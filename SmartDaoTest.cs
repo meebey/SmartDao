@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Data.SqlClient;
 using System.Threading;
 using System.Collections.Generic;
 using Npgsql;
@@ -13,29 +14,90 @@ namespace Meebey.SmartDao
 #if LOG4NET
             log4net.Config.BasicConfigurator.Configure();
 #endif
-            string connectionString =
-                "Server=localhost;" + 
-                "Database=test;" +
-                "User ID=postgres;";
+            IDbConnection con;
+            ISqlProvider provider;
             
-            IDbConnection con = new NpgsqlConnection(connectionString);
+            /*
+            con = new NpgsqlConnection("Server=localhost;" + 
+                                       "Database=test;" +
+                                       "User ID=postgres;");
+            provider = new AnsiSqlProvider();
+            */
+            
+            /*
+            con = new NpgsqlConnection("Server=mussolini.gsd-software.net;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            provider = new AnsiSqlProvider();
+            */
+            
+            /*
+            con = new SqlConnection("Server=mussolini.gsd-software.net;" + 
+                                    "Database=test;" +
+                                    "User ID=test;" +
+                                    "Password=test;");
+            provider = new MSSqlProvider();
+            */
+            
+            /*
+            con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            provider = new AnsiSqlProvider();
+            */
+            
+            con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            provider = new AnsiSqlProvider();
+            
             con.Open();
-            
-            DatabaseManager dbMan = new DatabaseManager(con);
+            DatabaseManager dbMan = new DatabaseManager(con, provider);
+            if (dbMan.TableExists(typeof(DBTest))) {
+                dbMan.DropTable(typeof(DBTest));
+            }
             dbMan.InitTable(typeof(DBTest));
-            
-            DateTime start, stop;
-            double total;
-            int count = 10;
             
             // WARMUP
             TestHighLevel(dbMan, 1);
+            dbMan.EmptyTable(typeof(DBTest));
             TestLowLevel(con, 1);
+            dbMan.EmptyTable(typeof(DBTest));
+
+            // RUN
+            int count = 1000;
+            DateTime start, stop;
+            
+            // HARD CLEAN UP
+            dbMan.DropTable(typeof(DBTest));
+            dbMan.InitTable(typeof(DBTest));
 
             // SHOWTIME
+            start = DateTime.UtcNow;
             TestHighLevel(dbMan, count);
-            Thread.Sleep(1000);
+            stop = DateTime.UtcNow;
+            double queryAvg = (stop - start).TotalMilliseconds / count;
+            
+            // HARD CLEAN UP
+            dbMan.DropTable(typeof(DBTest));
+            dbMan.InitTable(typeof(DBTest));
+            
+            // SHOWTIME
+            start = DateTime.UtcNow;
             TestLowLevel(con, count);
+            stop = DateTime.UtcNow;
+            double sqlAvg = (stop - start).TotalMilliseconds / count;
+            
+            Console.WriteLine("query.Add() avg: " + queryAvg  + " ms/query");
+            Console.WriteLine("raw SQL avg: " + sqlAvg + " ms/query");
+            
+            Query<DBTest> query = new Query<DBTest>(dbMan);
+            DBTest template = new DBTest();
+            template.PKInt32 = 0;
+            query.GetAll(template, "pk_int32");
             
             con.Close();
             con.Dispose();
@@ -51,34 +113,25 @@ namespace Meebey.SmartDao
         
         private static void TestLowLevel(IDbConnection con, int count)
         {
-            DateTime start, stop;
-            double total = 0d;
             for (int i = 0; i < count; i++) {
-                start = DateTime.UtcNow;
-                string sql = "INSERT INTO test_table (pk_int32, int32_column_fixed, double_column, string_column, decimal_column, datetime_column, int32_column, single_column) VALUES (0, 0, 0, 'abc', 0, '0001-01-01 00:00:00', 0, 0)";
+                string sql = String.Format("INSERT INTO test_table (pk_int32, int32_column_fixed, double_column, string_column, decimal_column, datetime_column, int32_column, single_column) VALUES ({0}, 0, 0, 'abc', 0, '1900-01-01 00:00:00', 0, 0)", i);
                 IDbCommand com = con.CreateCommand();
                 com.CommandText = sql;
                 com.ExecuteNonQuery();
-                stop = DateTime.UtcNow;
-                total += (stop - start).TotalMilliseconds;
             }
-            Console.WriteLine("raw SQL avg: " + total / count  + " ms/call");
         }
 
         private static void TestHighLevel(DatabaseManager dbMan, int count)
         {
-            DateTime start, stop;
-            double total = 0d;
             Query<DBTest> query = new Query<DBTest>(dbMan);
+            DateTime date = DateTime.Parse("1900-01-01 00:00:00");
             for (int i = 0; i < count; i++) {
-                start = DateTime.UtcNow;
                 DBTest test = new DBTest();
+                test.PKInt32 = i;
+                test.DateTimeColumn = date;
                 test.StringColumn = "abc";
                 query.Add(test);
-                stop = DateTime.UtcNow;
-                total += (stop - start).TotalMilliseconds;
             }
-            Console.WriteLine("query.Add() avg: " + total / count  + " ms/call");
         }
     }
 }

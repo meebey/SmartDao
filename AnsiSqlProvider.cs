@@ -5,13 +5,13 @@ using System.Collections.Generic;
 
 namespace Meebey.SmartDao
 {
-    public class SqlProvider
+    public class AnsiSqlProvider : ISqlProvider
     {
-        public SqlProvider()
+        public AnsiSqlProvider()
         {
         }
         
-        public virtual string GetCreateStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<string> primaryKeys)
+        public virtual string GetCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<string> primaryKeys)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -92,7 +92,30 @@ namespace Meebey.SmartDao
                 sql.Append(", \n");
             }
             sql.Remove(sql.Length - 3, 3);
-            sql.Append(" )");
+            
+            if (primaryKeys.Count > 0) {
+                sql.Append(", \nPRIMARY KEY (");
+                foreach (string pk in primaryKeys) {
+                    sql.AppendFormat("{0}, ", pk);
+                }
+                sql.Remove(sql.Length - 2, 2);
+                sql.Append(")");
+            }
+            
+            sql.Append(")");
+            return sql.ToString();
+        }
+        
+                                                 
+        public virtual string GetDropTableStatement(string tableName)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            
+            StringBuilder sql = new StringBuilder("DROP TABLE ");
+            sql.Append(GetTableName(tableName));
+            
             return sql.ToString();
         }
         
@@ -130,7 +153,51 @@ namespace Meebey.SmartDao
             
             return sql.ToString();
         }
-                                                 
+        
+        public virtual string GetSelectStatement(string tableName, IList<string> columnNames, string whereClause)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            if (columnNames == null) {
+                throw new ArgumentNullException("columnNames");
+            }
+            
+            if (columnNames.Count == 0) {
+                throw new ArgumentException("columnNames must not be empty.");
+            }
+            
+            StringBuilder sql = new StringBuilder("SELECT ");
+            for (int idx = 0; idx < columnNames.Count; idx++) {
+                sql.AppendFormat("{0}, ", GetTableName(columnNames[idx]));
+            }
+            sql.Remove(sql.Length - 2, 2);
+            
+            sql.Append(" FROM ");
+            sql.Append(GetTableName(tableName));
+            
+            if (whereClause != null) {
+                sql.AppendFormat(" WHERE {0}", whereClause);
+            }
+            
+            return sql.ToString();
+        }
+        
+        public virtual string GetDeleteStatement(string tableName, string whereClause)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            
+            StringBuilder sql = new StringBuilder("DELETE FROM ");
+            sql.Append(GetTableName(tableName));
+            if (whereClause != null) {
+                sql.AppendFormat("WHERE {0}", whereClause);
+            }
+            
+            return sql.ToString();
+        }
+
         public virtual string GetDataTypeName(DbType dbType)
         {
             switch (dbType) {

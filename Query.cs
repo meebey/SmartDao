@@ -14,6 +14,7 @@ namespace Meebey.SmartDao
         private Type            _TableType;
         private string          _TableName;
         private IList<KeyValuePair<ColumnAttribute, FieldInfo>> _Fields;
+        private IDictionary<string, FieldInfo> _Field;
         private DatabaseManager _DatabaseManager;
         
         public Query(DatabaseManager dbManager)
@@ -83,6 +84,9 @@ namespace Meebey.SmartDao
                 }
                 columnNames.Add(column.Name);
                 columnValues.Add(value);
+#if LOG4NET
+                //_Logger.Debug("Add(): value: " + value);
+#endif
             }
             
             IDbCommand cmd = _DatabaseManager.CreateInsertCommand(_TableName, columnNames, columnValues);
@@ -95,9 +99,42 @@ namespace Meebey.SmartDao
             return entry;
         }
         
-        public IList<T> GetAll(T template, params string[] columns)
+        public IList<T> GetAll(T template, params string[] selectColumns)
         {
-            // TODO: implement me
+            InitFields();
+
+            List<string> columnNames = new List<string>(_Fields.Count);
+            List<object> columnValues = new List<object>(_Fields.Count);
+            foreach (KeyValuePair<ColumnAttribute, FieldInfo> pair in _Fields) {
+                ColumnAttribute column = pair.Key;
+                FieldInfo field = pair.Value;
+                object value = field.GetValue(template);
+                if (value == null) {
+                    continue;
+                }
+                columnNames.Add(column.Name);
+                columnValues.Add(value);
+            }
+            
+            IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName, selectColumns, columnNames, columnValues);
+#if LOG4NET
+            _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
+#endif
+            IDataReader reader = cmd.ExecuteReader();
+            List<T> rows = new List<T>();
+            while (reader.Read()) {
+                foreach (KeyValuePair<ColumnAttribute, FieldInfo> pair in _Fields) {
+                    ColumnAttribute column = pair.Key;
+                    FieldInfo field = pair.Value;
+                    object value = field.GetValue(template);
+                    if (value == null) {
+                        continue;
+                    }
+                    columnNames.Add(column.Name);
+                    columnValues.Add(value);
+                }
+            }
+                
             return null;
         }
     }
