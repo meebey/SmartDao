@@ -23,7 +23,7 @@
     <File name="PrimaryKey.cs" subtype="Code" buildaction="Compile" />
     <File name="ForeignKey.cs" subtype="Code" buildaction="Compile" />
     <File name="Query.cs" subtype="Code" buildaction="Compile" />
-    <File name="SqlProvider.cs" subtype="Code" buildaction="Compile" />
+    <File name="AnsiSqlProvider.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />

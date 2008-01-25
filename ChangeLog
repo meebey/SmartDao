@@ -1,0 +1,11 @@
+2008-01-25  Mirco Bauer <meebey@meebey.net> 
+
+	* DatabaseManager.cs, SmartDao.mdp, Query.cs, SqlProvider.cs,
+	  AnsiSqlProvider.cs: - renamed SqlProvider to AnsiSqlProvider.
+	
+	  - moved SQL statement construction into AnsiSqlProvider.
+	
+	  - moved DB command construction into DatabaseManager.
+	
+	  - left only O/R mapping using reflection code in Query.
+

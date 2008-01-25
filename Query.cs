@@ -61,19 +61,18 @@ namespace Meebey.SmartDao
 #endif
         }
         
+        public IList<T> Add(IList<T> entry)
+        {
+            // TODO: implement multi-inserts here
+            return null;
+        }
+        
         public T Add(T entry)
         {
             InitFields();
             
-            IDbCommand com = _DatabaseManager.DBConnection.CreateCommand();
-            StringBuilder sql = new StringBuilder("INSERT INTO ");
-            sql.Append(_DatabaseManager.SqlProvider.GetTableName(_TableName));
-            sql.Append(" (");
-            
-            StringBuilder values = new StringBuilder();
-            // BUG: we can't iterate over the list 2 times and hoping they will be in the same order!
-            // TODO: optimize me, getting 2 times the value is not really needed
-            int paramaterNumber = 0;
+            List<string> columnNames = new List<string>(_Fields.Count);
+            List<object> columnValues = new List<object>(_Fields.Count);
             foreach (KeyValuePair<ColumnAttribute, FieldInfo> pair in _Fields) {
                 ColumnAttribute column = pair.Key;
                 FieldInfo field = pair.Value;
@@ -82,37 +81,24 @@ namespace Meebey.SmartDao
                 if (value == null) {
                     continue;
                 }
-                sql.Append(_DatabaseManager.SqlProvider.GetColumnName(column.Name));
-                sql.Append(", ");
-
-                string parameterName = "@" + paramaterNumber++;
-                values.AppendFormat("{0}, ", parameterName);
-                IDataParameter param = com.CreateParameter();
-                param.ParameterName = parameterName;
-                // HACK: map CLI type to DbType
-                param.DbType = DbType.String;
-                param.Value = value;
-                com.Parameters.Add(param);
+                columnNames.Add(column.Name);
+                columnValues.Add(value);
             }
-            sql.Remove(sql.Length - 2, 2);
-            sql.Append(") VALUES (");
-            sql.Append(values);
-            sql.Remove(sql.Length - 2, 2);
-            sql.Append(")");
             
-            com.CommandText = sql.ToString();
+            IDbCommand cmd = _DatabaseManager.CreateInsertCommand(_TableName, columnNames, columnValues);
 #if LOG4NET
-            _Logger.Debug("Add(): SQL: " + com.CommandText);
+            _Logger.Debug("Add(): SQL: " + cmd.CommandText);
 #endif
-            com.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
             
             // TODO: copy pk into a fresh object
             return entry;
         }
         
-        public T GetAll(T template, params string[] fields)
+        public IList<T> GetAll(T template, params string[] columns)
         {
-            return template;
+            // TODO: implement me
+            return null;
         }
     }
 }
