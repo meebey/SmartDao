@@ -12,7 +12,7 @@ namespace Meebey.SmartDao
         private static readonly log4net.ILog _Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 #endif
         private IDbConnection _DBConnection;
-        private ISqlProvider   _SqlProvider;
+        private ISqlProvider  _SqlProvider;
         
         public ISqlProvider SqlProvider {
             get {
@@ -135,6 +135,7 @@ namespace Meebey.SmartDao
             List<string> columnNames       = new List<string>(fields.Length); 
             List<Type>   columnTypes       = new List<Type>(fields.Length); 
             List<int>    columnLengths     = new List<int>(fields.Length);
+            List<bool>   columnIsNullables = new List<bool>(fields.Length);
             List<string> primaryKeyColumns = new List<string>();
             foreach (FieldInfo field in fields) {
                 object[] columnAttrs = field.GetCustomAttributes(typeof(ColumnAttribute), true);
@@ -146,7 +147,8 @@ namespace Meebey.SmartDao
                 columnNames.Add(columnAttr.Name);
                 columnTypes.Add(field.FieldType);
                 columnLengths.Add(columnAttr.Length);
-            
+                columnIsNullables.Add(columnAttr.IsNullable);
+                
                 object[] pkAttrs = field.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
                 if (pkAttrs == null || pkAttrs.Length == 0) {
                     continue;
@@ -162,6 +164,7 @@ namespace Meebey.SmartDao
                                                               columnNames,
                                                               columnTypes,
                                                               columnLengths,
+                                                              columnIsNullables,
                                                               primaryKeyColumns);
 #if LOG4NET
             _Logger.Debug("CreateTable(): SQL: " + sql);
@@ -221,18 +224,23 @@ namespace Meebey.SmartDao
             
             TableAttribute attr = (TableAttribute) attrs[0];
             
+            /*
             List<string> columns = new List<string>(new string[] {"COUNT(*)"});
-            string sql = _SqlProvider.GetSelectStatement("INFORMATION_SCHEMA.TABLES", columns, "TABLE_NAME = @table_name");
+            string sql = _SqlProvider.GetSelectStatement("INFORMATION_SCHEMA", "TABLES", columns, String.Format("TABLE_NAME = {0}table_name", _SqlProvider.GetParameterCharacter()));
+            */
+            string sql = _SqlProvider.GetTableExistsStatement(attr.Name);
 #if LOG4NET
             _Logger.Debug("TableExists(): SQL: " + sql);
 #endif
             IDbCommand com = _DBConnection.CreateCommand();
             com.CommandText = sql;
+            /*
             IDbDataParameter param = com.CreateParameter();
-            param.ParameterName = "@table_name";
+            param.ParameterName = String.Format("{0}table_name", _SqlProvider.GetParameterCharacter());
             param.DbType = DbType.String;
             param.Value = attr.Name;
             com.Parameters.Add(param);
+            */
             
             object res = com.ExecuteScalar();
             if (res is Int32) {
@@ -257,9 +265,9 @@ namespace Meebey.SmartDao
             command.CommandText = sql;
             for (int idx = 0; idx < columnValues.Count; idx++) {
                 IDbDataParameter parameter = command.CreateParameter();
-                parameter.ParameterName = String.Format("@{0}", idx);
+                parameter.ParameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
                 // HACK: map CLI type to DbType
-                parameter.DbType = DbType.String;
+                //parameter.DbType = DbType.String;
                 parameter.Value = columnValues[idx];
                 command.Parameters.Add(parameter);
             }
@@ -300,12 +308,12 @@ namespace Meebey.SmartDao
                 } else {
                     whereClause.Append(" = ");
                 }
-                whereClause.AppendFormat("@{0} AND ", idx);
+                whereClause.AppendFormat("{0}{1} AND ", _SqlProvider.GetParameterCharacter(), idx);
                 
                 IDbDataParameter parameter = command.CreateParameter();
-                parameter.ParameterName = String.Format("@{0}", idx);
+                parameter.ParameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
                 // HACK: map CLI type to DbType
-                parameter.DbType = DbType.String;
+                //parameter.DbType = DbType.String;
                 parameter.Value = value;
                 command.Parameters.Add(parameter);
             }
@@ -313,7 +321,7 @@ namespace Meebey.SmartDao
                 whereClause.Remove(whereClause.Length - 4, 4);
             }
             
-            string sql = _SqlProvider.GetSelectStatement(tableName, selectColumnNames, whereClause.ToString());
+            string sql = _SqlProvider.GetSelectStatement(null, tableName, selectColumnNames, whereClause.ToString());
             command.CommandText = sql;
             return command;
         }

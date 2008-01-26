@@ -8,6 +8,7 @@ namespace Meebey.SmartDao
         private string   _Default;
         private string[] _OldNames;
         private int      _Length;
+        private bool     _IsNullable;
         
         public string Name {
             get {
@@ -42,6 +43,15 @@ namespace Meebey.SmartDao
             }
             set {
                 _Length = value;
+            }
+        }
+        
+        public bool IsNullable {
+            get {
+                return _IsNullable;
+            }
+            set {
+                _IsNullable = value;
             }
         }
         

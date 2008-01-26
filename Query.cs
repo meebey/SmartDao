@@ -158,6 +158,11 @@ namespace Meebey.SmartDao
                         if (field == null) {
                             throw new InvalidOperationException("Field for column could not be found: " + name);
                         }
+                        if (!field.FieldType.IsAssignableFrom(value.GetType())) {
+                            throw new InvalidOperationException(
+                                        String.Format("Field type: {0} of {1} doesn't match column type: {2} for column: {3}",
+                                                      field.FieldType, row.GetType() , value.GetType(), name));
+                        }
                         
                         field.SetValue(row, value);
                     }

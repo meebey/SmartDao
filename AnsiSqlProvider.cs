@@ -11,7 +11,7 @@ namespace Meebey.SmartDao
         {
         }
         
-        public virtual string GetCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<string> primaryKeys)
+        public virtual string GetCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool> columnIsNullables, IList<string> primaryKeys)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -44,6 +44,11 @@ namespace Meebey.SmartDao
                 string name = columnNames[idx];
                 Type type = columnTypes[idx]; 
                 int length = columnLengths[idx];
+                bool isNullable = columnIsNullables[idx];
+                
+                if (type.IsValueType && !IsNullableType(type)) {
+                    throw new NotSupportedException("Value type: " + type + " must be nullable for column: " + name);
+                }
                 
                 sql.AppendFormat("{0} ", GetColumnName(name));
                 if (type == typeof(string)) {
@@ -78,10 +83,10 @@ namespace Meebey.SmartDao
                            type == typeof(DateTime?)) {
                     sql.Append(GetDataTypeName(DbType.DateTime));
                 } else {
-                    throw new ApplicationException("Unsupported column data type: " + type);
+                    throw new NotSupportedException("Unsupported column data type: " + type);
                 }
                 
-                if (type.IsValueType) {
+                if (isNullable) {
                     if (IsNullableType(type)) {
                         sql.Append(" NULL");
                     } else {
@@ -106,7 +111,6 @@ namespace Meebey.SmartDao
             return sql.ToString();
         }
         
-                                                 
         public virtual string GetDropTableStatement(string tableName)
         {
             if (tableName == null) {
@@ -117,6 +121,11 @@ namespace Meebey.SmartDao
             sql.Append(GetTableName(tableName));
             
             return sql.ToString();
+        }
+        
+        public virtual string GetTableExistsStatement(string tableName)
+        {
+            return String.Format("SELECT COUNT(*) FROM {0} WHERE TABLE_NAME = '{1}'", GetTableName("INFORMATION_SCHEMA", "TABLES"), tableName);
         }
         
         public virtual string GetInsertStatement(string tableName, IList<string> columnNames)
@@ -140,7 +149,7 @@ namespace Meebey.SmartDao
             int paramaterNumber = 0;
             for (int idx = 0; idx < columnNames.Count; idx++) {
                 string name = columnNames[idx];
-                string parameterName = String.Format("@{0}", paramaterNumber++);
+                string parameterName = String.Format("{0}{1}", GetParameterCharacter(), paramaterNumber++);
                 
                 sql.AppendFormat("{0}, ", GetColumnName(name));
                 values.AppendFormat("{0}, ", parameterName);
@@ -154,7 +163,7 @@ namespace Meebey.SmartDao
             return sql.ToString();
         }
         
-        public virtual string GetSelectStatement(string tableName, IList<string> columnNames, string whereClause)
+        public virtual string GetSelectStatement(string schemaName, string tableName, IList<string> columnNames, string whereClause)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -169,12 +178,12 @@ namespace Meebey.SmartDao
             
             StringBuilder sql = new StringBuilder("SELECT ");
             for (int idx = 0; idx < columnNames.Count; idx++) {
-                sql.AppendFormat("{0}, ", GetTableName(columnNames[idx]));
+                sql.AppendFormat("{0}, ", GetColumnName(columnNames[idx]));
             }
             sql.Remove(sql.Length - 2, 2);
             
             sql.Append(" FROM ");
-            sql.Append(GetTableName(tableName));
+            sql.Append(GetTableName(schemaName, tableName));
             
             if (whereClause != null && whereClause.Length != 0) {
                 sql.AppendFormat(" WHERE {0}", whereClause);
@@ -197,7 +206,7 @@ namespace Meebey.SmartDao
             
             return sql.ToString();
         }
-
+    
         public virtual string GetDataTypeName(DbType dbType)
         {
             switch (dbType) {
@@ -237,12 +246,25 @@ namespace Meebey.SmartDao
         {
             return tableName;
         }
-            
+        
+        public virtual string GetTableName(string schemaName, string tableName)
+        {
+            if (schemaName == null) {
+                return GetTableName(tableName);
+            }
+            return String.Format("{0}.{1}", GetTableName(schemaName), GetTableName(tableName));
+        }
+        
         public virtual string GetStatementSeparator()
         {
             return ";";
         }        
-
+        
+        public virtual string GetParameterCharacter()
+        {
+            return "@";
+        }
+        
         private static bool IsNullableType(Type type)
         {
             if (type == null) {

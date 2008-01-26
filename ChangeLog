@@ -1,5 +1,14 @@
 2008-01-26  Mirco Bauer <meebey@meebey.net> 
 
+	* SqliteProvider.cs, MySqlProvider.cs, ColumnAttribute.cs, ISqlProvider.cs,
+	  SmartDao.mdp, AnsiSqlProvider.cs, DatabaseManager.cs, Query.cs,
+	  SmartDaoTest.cs: Added better support for NULL fields using IsNullable
+	  in ColumnAttribute.
+	
+	  Implemented MySqlProvider and SqliteProvider.
+
+2008-01-26  Mirco Bauer <meebey@meebey.net> 
+
 	* DBTest.cs, Query.cs: removed broken support for non-nullable value types
 	
 	  finished basic implementation of GetAll()

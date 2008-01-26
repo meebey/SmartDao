@@ -4,6 +4,8 @@ using System.Data.SqlClient;
 using System.Threading;
 using System.Collections.Generic;
 using Npgsql;
+using MySql.Data.MySqlClient;
+using Mono.Data.Sqlite;
 
 namespace Meebey.SmartDao
 {
@@ -17,10 +19,22 @@ namespace Meebey.SmartDao
             IDbConnection con;
             ISqlProvider provider;
             
+            /*
             con = new NpgsqlConnection("Server=localhost;" + 
                                        "Database=test;" +
                                        "User ID=postgres;");
             provider = new AnsiSqlProvider();
+            */
+            
+            /*
+            con = new MySqlConnection("Server=localhost;" + 
+                                      "Database=test;" +
+                                      "User ID=root;");
+            provider = new MySqlProvider();
+            */
+            
+            con = new SqliteConnection("Data Source=file:test.db");
+            provider = new SqliteProvider();
             
             /*
             con = new NpgsqlConnection("Server=mussolini.gsd-software.net;" + 
@@ -68,7 +82,7 @@ namespace Meebey.SmartDao
             dbMan.EmptyTable(typeof(DBTest));
 
             // RUN
-            int count = 100000;
+            int count = 1000;
             DateTime start, stop;
             
             // HARD CLEAN UP
@@ -97,7 +111,7 @@ namespace Meebey.SmartDao
             stop = DateTime.UtcNow;
             double queryAvg = (stop - start).TotalMilliseconds / count;
             
-            Console.WriteLine("raw SQL avg: " + sqlAvg + " ms/query");
+            Console.WriteLine("raw SQL INSERTs avg: " + sqlAvg + " ms/query");
             Console.WriteLine("query.Add() avg: " + queryAvg  + " ms/query");
             
             Query<DBTest> query = new Query<DBTest>(dbMan);
@@ -134,7 +148,7 @@ namespace Meebey.SmartDao
         private static void TestLowLevel(IDbConnection con, int count)
         {
             for (int i = 0; i < count; i++) {
-                string sql = String.Format("INSERT INTO test_table (pk_int32, int32_column_fixed, double_column, string_column, decimal_column, datetime_column, int32_column, single_column) VALUES ({0}, 0, 0, 'abc', 0, '{1}', 0, 0)", i, DateTime.UtcNow);
+                string sql = String.Format("INSERT INTO test_table (pk_int32, int32_column_fixed, double_column, string_column, decimal_column, datetime_column, int32_column, single_column) VALUES ({0}, 0, 0, 'abc', 0, '{1}', 0, 0)", i, DateTime.UtcNow.ToString("s"));
                 IDbCommand com = con.CreateCommand();
                 com.CommandText = sql;
                 com.ExecuteNonQuery();
