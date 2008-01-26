@@ -176,7 +176,7 @@ namespace Meebey.SmartDao
             sql.Append(" FROM ");
             sql.Append(GetTableName(tableName));
             
-            if (whereClause != null) {
+            if (whereClause != null && whereClause.Length != 0) {
                 sql.AppendFormat(" WHERE {0}", whereClause);
             }
             

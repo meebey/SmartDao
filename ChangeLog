@@ -1,3 +1,15 @@
+2008-01-26  Mirco Bauer <meebey@meebey.net> 
+
+	* DBTest.cs, Query.cs: removed broken support for non-nullable value types
+	
+	  finished basic implementation of GetAll()
+	
+	  added many null checks for method parameters
+	
+	* DatabaseManager.cs: fixed bug in CreateSelectCommand() if whereColumns is
+	  empty
+	* SmartDaoTest.cs: added more benchmarks
+
 2008-01-25  Mirco Bauer <meebey@meebey.net> 
 
 	* DatabaseManager.cs, SmartDao.mdp, Query.cs, SqlProvider.cs,

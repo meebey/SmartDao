@@ -17,12 +17,10 @@ namespace Meebey.SmartDao
             IDbConnection con;
             ISqlProvider provider;
             
-            /*
             con = new NpgsqlConnection("Server=localhost;" + 
                                        "Database=test;" +
                                        "User ID=postgres;");
             provider = new AnsiSqlProvider();
-            */
             
             /*
             con = new NpgsqlConnection("Server=mussolini.gsd-software.net;" + 
@@ -48,11 +46,13 @@ namespace Meebey.SmartDao
             provider = new AnsiSqlProvider();
             */
             
+            /*
             con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
             provider = new AnsiSqlProvider();
+            */
             
             con.Open();
             DatabaseManager dbMan = new DatabaseManager(con, provider);
@@ -62,13 +62,13 @@ namespace Meebey.SmartDao
             dbMan.InitTable(typeof(DBTest));
             
             // WARMUP
-            TestHighLevel(dbMan, 1);
-            dbMan.EmptyTable(typeof(DBTest));
             TestLowLevel(con, 1);
+            dbMan.EmptyTable(typeof(DBTest));
+            TestHighLevel(dbMan, 1);
             dbMan.EmptyTable(typeof(DBTest));
 
             // RUN
-            int count = 1000;
+            int count = 100000;
             DateTime start, stop;
             
             // HARD CLEAN UP
@@ -77,27 +77,47 @@ namespace Meebey.SmartDao
 
             // SHOWTIME
             start = DateTime.UtcNow;
-            TestHighLevel(dbMan, count);
+            TestLowLevel(con, count);
             stop = DateTime.UtcNow;
-            double queryAvg = (stop - start).TotalMilliseconds / count;
+            double sqlAvg = (stop - start).TotalMilliseconds / count;
+            
+            // BREAK
+            Thread.Sleep(5000);
             
             // HARD CLEAN UP
             dbMan.DropTable(typeof(DBTest));
             dbMan.InitTable(typeof(DBTest));
             
+            // BREAK
+            Thread.Sleep(5000);
+            
             // SHOWTIME
             start = DateTime.UtcNow;
-            TestLowLevel(con, count);
+            TestHighLevel(dbMan, count);
             stop = DateTime.UtcNow;
-            double sqlAvg = (stop - start).TotalMilliseconds / count;
+            double queryAvg = (stop - start).TotalMilliseconds / count;
             
-            Console.WriteLine("query.Add() avg: " + queryAvg  + " ms/query");
             Console.WriteLine("raw SQL avg: " + sqlAvg + " ms/query");
+            Console.WriteLine("query.Add() avg: " + queryAvg  + " ms/query");
             
             Query<DBTest> query = new Query<DBTest>(dbMan);
+            // warm up
+            IList<DBTest> tests = query.GetAll(null, "pk_int32");
+            
+            start = DateTime.UtcNow;
+            tests = query.GetAll(null, "*");
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.GetAll() rows: " + tests.Count);
+            Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
+            
+            start = DateTime.UtcNow;
             DBTest template = new DBTest();
-            template.PKInt32 = 0;
-            query.GetAll(template, "pk_int32");
+            template.PKInt32 = 1;
+            tests = query.GetAll(template, "pk_int32");
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.GetAll() rows: " + tests.Count);
+            Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
             con.Close();
             con.Dispose();
@@ -114,7 +134,7 @@ namespace Meebey.SmartDao
         private static void TestLowLevel(IDbConnection con, int count)
         {
             for (int i = 0; i < count; i++) {
-                string sql = String.Format("INSERT INTO test_table (pk_int32, int32_column_fixed, double_column, string_column, decimal_column, datetime_column, int32_column, single_column) VALUES ({0}, 0, 0, 'abc', 0, '1900-01-01 00:00:00', 0, 0)", i);
+                string sql = String.Format("INSERT INTO test_table (pk_int32, int32_column_fixed, double_column, string_column, decimal_column, datetime_column, int32_column, single_column) VALUES ({0}, 0, 0, 'abc', 0, '{1}', 0, 0)", i, DateTime.UtcNow);
                 IDbCommand com = con.CreateCommand();
                 com.CommandText = sql;
                 com.ExecuteNonQuery();
@@ -124,11 +144,10 @@ namespace Meebey.SmartDao
         private static void TestHighLevel(DatabaseManager dbMan, int count)
         {
             Query<DBTest> query = new Query<DBTest>(dbMan);
-            DateTime date = DateTime.Parse("1900-01-01 00:00:00");
             for (int i = 0; i < count; i++) {
                 DBTest test = new DBTest();
                 test.PKInt32 = i;
-                test.DateTimeColumn = date;
+                test.DateTimeColumn = DateTime.UtcNow;
                 test.StringColumn = "abc";
                 query.Add(test);
             }

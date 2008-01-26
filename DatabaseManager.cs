@@ -244,7 +244,7 @@ namespace Meebey.SmartDao
             throw new NotSupportedException("Unsupported type returned by COUNT(*): " + res.GetType());
         }
         
-        public virtual Query<T> CreateQuery<T>()
+        public virtual Query<T> CreateQuery<T>() where T : new()
         {
             return new Query<T>(this);
         }
@@ -309,7 +309,9 @@ namespace Meebey.SmartDao
                 parameter.Value = value;
                 command.Parameters.Add(parameter);
             }
-            whereClause.Remove(whereClause.Length - 4, 4);
+            if (whereColumnNames.Count > 0) {
+                whereClause.Remove(whereClause.Length - 4, 4);
+            }
             
             string sql = _SqlProvider.GetSelectStatement(tableName, selectColumnNames, whereClause.ToString());
             command.CommandText = sql;

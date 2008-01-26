@@ -16,42 +16,27 @@ namespace Meebey.SmartDao
         private string _StringColumnNonFixed;
         
         [Column(Name = "int32_column")]
-        private Int32 _Int32Column;
-        
-        [Column(Name = "int32_column_nullable")]
-        private Int32? _Int32ColumnNullable;
+        private Int32? _Int32Column;
         
         [Column(Name = "int32_column_fixed",
                 Length = 4)]
-        private Int32 _Int32ColumnFixed;
+        private Int32? _Int32ColumnFixed;
         
         [Column(Name = "decimal_column")]
-        private Decimal _DecimalColumnFixed;
-        
-        [Column(Name = "decimal_column_nullable")]
-        private Decimal? _DecimalColumnFixedNullable;
+        private Decimal? _DecimalColumnFixed;
         
         [Column(Name = "single_column")]
-        private Single _SingleColumn;
+        private Single? _SingleColumn;
 
-        [Column(Name = "single_column_nullable")]
-        private Single? _SingleColumnNullable;
-        
         [Column(Name = "double_column")]
-        private Double _DoubleColumn;
-        
-        [Column(Name = "double_column_nullable")]
-        private Double? _DoubleColumnNullable;
+        private Double? _DoubleColumn;
         
         [Column(Name = "datetime_column")]
-        private DateTime _DateTimeColumn;
-        
-        [Column(Name = "datetime_column_nullable")]
-        private DateTime? _DateTimeColumnNullable;
+        private DateTime? _DateTimeColumn;
         
         [PrimaryKey]
         [Column(Name = "pk_int32")]
-        private Int32 _PKInt32;
+        private Int32? _PKInt32;
         
         public string StringColumn {
             get {
@@ -62,13 +47,7 @@ namespace Meebey.SmartDao
             }
         }
 
-        public Nullable<DateTime> DateTimeColumnNullable {
-            get {
-                return _DateTimeColumnNullable;
-            }
-        }
-
-        public DateTime DateTimeColumn {
+        public DateTime? DateTimeColumn {
             get {
                 return _DateTimeColumn;
             }
@@ -77,7 +56,7 @@ namespace Meebey.SmartDao
             }
         }
 
-        public int PKInt32 {
+        public Int32? PKInt32 {
             get {
                 return _PKInt32;
             }

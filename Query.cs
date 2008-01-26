@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace Meebey.SmartDao
 {
-    public class Query<T>
+    public class Query<T> where T : new()
     {
 #if LOG4NET
         private static readonly log4net.ILog _Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -14,11 +14,15 @@ namespace Meebey.SmartDao
         private Type            _TableType;
         private string          _TableName;
         private IList<KeyValuePair<ColumnAttribute, FieldInfo>> _Fields;
-        private IDictionary<string, FieldInfo> _Field;
+        private IDictionary<string, FieldInfo> _ColumnToFields;
         private DatabaseManager _DatabaseManager;
         
         public Query(DatabaseManager dbManager)
         {
+            if (dbManager == null) {
+                throw new ArgumentNullException("dbManager");
+            }
+            
             _DatabaseManager = dbManager;
             
             _TableType = typeof(T);
@@ -43,6 +47,7 @@ namespace Meebey.SmartDao
 #endif
             FieldInfo[] fields = _TableType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
             _Fields = new List<KeyValuePair<ColumnAttribute, FieldInfo>>(fields.Length);
+            _ColumnToFields = new Dictionary<string, FieldInfo>(fields.Length);
             bool foundColumn = false;
             foreach (FieldInfo field in fields) {
                 object[] columnAttrs = field.GetCustomAttributes(typeof(ColumnAttribute), true);
@@ -51,8 +56,14 @@ namespace Meebey.SmartDao
                 }
                 foundColumn = true;
                 
+                if (field.FieldType.IsValueType &&
+                    !(field.FieldType.IsGenericType &&
+                      field.FieldType.GetGenericTypeDefinition() == typeof(Nullable<>))) {
+                    throw new NotSupportedException("Fields with ColumnAttribute must be reference types or nullable value types.");
+                }
                 ColumnAttribute columnAttr = (ColumnAttribute) columnAttrs [0];
                 _Fields.Add(new KeyValuePair<ColumnAttribute, FieldInfo>(columnAttr, field));
+                _ColumnToFields.Add(columnAttr.Name, field);
             }
             if (!foundColumn) {
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "_TableType");
@@ -70,6 +81,10 @@ namespace Meebey.SmartDao
         
         public T Add(T entry)
         {
+            if (entry == null) {
+                throw new ArgumentNullException("entry");
+            }
+            
             InitFields();
             
             List<string> columnNames = new List<string>(_Fields.Count);
@@ -101,28 +116,15 @@ namespace Meebey.SmartDao
         
         public IList<T> GetAll(T template, params string[] selectColumns)
         {
+            if (selectColumns == null) {
+                throw new ArgumentNullException("selectColumns");
+            }
+            
             InitFields();
 
             List<string> columnNames = new List<string>(_Fields.Count);
             List<object> columnValues = new List<object>(_Fields.Count);
-            foreach (KeyValuePair<ColumnAttribute, FieldInfo> pair in _Fields) {
-                ColumnAttribute column = pair.Key;
-                FieldInfo field = pair.Value;
-                object value = field.GetValue(template);
-                if (value == null) {
-                    continue;
-                }
-                columnNames.Add(column.Name);
-                columnValues.Add(value);
-            }
-            
-            IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName, selectColumns, columnNames, columnValues);
-#if LOG4NET
-            _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
-#endif
-            IDataReader reader = cmd.ExecuteReader();
-            List<T> rows = new List<T>();
-            while (reader.Read()) {
+            if (template != null) {
                 foreach (KeyValuePair<ColumnAttribute, FieldInfo> pair in _Fields) {
                     ColumnAttribute column = pair.Key;
                     FieldInfo field = pair.Value;
@@ -134,8 +136,35 @@ namespace Meebey.SmartDao
                     columnValues.Add(value);
                 }
             }
+            
+            IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName, selectColumns, columnNames, columnValues);
+#if LOG4NET
+            _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
+#endif
+            using (IDataReader reader = cmd.ExecuteReader()) {
+                List<T> rows = new List<T>();
+                while (reader.Read()) {
+                    T row = new T();
+                    rows.Add(row);
+                    for (int i = 0; i < reader.FieldCount; i++) {
+                        if (reader.IsDBNull(i)) {
+                            continue;
+                        }
+                        
+                        string name = reader.GetName(i);
+                        object value = reader.GetValue(i);
+                        
+                        FieldInfo field = _ColumnToFields[name];
+                        if (field == null) {
+                            throw new InvalidOperationException("Field for column could not be found: " + name);
+                        }
+                        
+                        field.SetValue(row, value);
+                    }
+                }
                 
-            return null;
+                return rows;
+            }                        
         }
     }
 }

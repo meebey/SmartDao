@@ -18,5 +18,10 @@ namespace Meebey.SmartDao
             
             return base.GetDataTypeName(dbType);
         }
+        
+        public override string GetTableName(string tableName)
+        {
+            return String.Format("[{0}]", tableName);
+        }
     }
 }

@@ -10,6 +10,7 @@
   <StartMode startupentry="SmartDao" single="True">
     <Execute type="None" entry="SmartDao" />
   </StartMode>
+  <MonoDevelop.ChangeLogAddIn.ChangeLogInfo policy="OneChangeLogInProjectRootDirectory" />
   <Entries>
     <Entry filename="SmartDao.mdp" />
   </Entries>
