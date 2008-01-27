@@ -19,12 +19,10 @@ namespace Meebey.SmartDao
             IDbConnection con;
             ISqlProvider provider;
             
-            /*
             con = new NpgsqlConnection("Server=localhost;" + 
                                        "Database=test;" +
                                        "User ID=postgres;");
             provider = new AnsiSqlProvider();
-            */
             
             /*
             con = new MySqlConnection("Server=localhost;" + 
@@ -33,8 +31,10 @@ namespace Meebey.SmartDao
             provider = new MySqlProvider();
             */
             
-            con = new SqliteConnection("Data Source=file:test.db");
+            /*
+            con = new SqliteConnection("Data Source=test.db;");
             provider = new SqliteProvider();
+            */
             
             /*
             con = new NpgsqlConnection("Server=mussolini.gsd-software.net;" + 

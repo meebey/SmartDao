@@ -1,3 +1,15 @@
+2008-01-27  Mirco Bauer <meebey@meebey.net> 
+
+	* SqliteProvider.cs, ISqlProvider.cs, AnsiSqlProvider.cs: renamed
+	  Get*Statement to Create*Statement
+	* ColumnAttribute.cs: only pass NOT NULL to table creation if it was
+	  explicitly in the ColumnAttribute set
+	
+	* DBTest.cs: using column attributes on properties now
+	
+	* DatabaseManager.cs, Query.cs: using properties instead of fields now to
+	  read/write the values
+
 2008-01-26  Mirco Bauer <meebey@meebey.net> 
 
 	* SqliteProvider.cs, MySqlProvider.cs, ColumnAttribute.cs, ISqlProvider.cs,

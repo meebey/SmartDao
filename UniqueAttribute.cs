@@ -3,7 +3,7 @@ using System;
 namespace Meebey.SmartDao
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class ForeignKeyAttribute : Attribute
+    public class UniqueAttribute : Attribute
     {
         private string _Name;
         
@@ -16,11 +16,11 @@ namespace Meebey.SmartDao
             }
         }
         
-        public ForeignKeyAttribute()
+        public UniqueAttribute()
         {
         }
         
-        public ForeignKeyAttribute(string name)
+        public UniqueAttribute(string name)
         {
             _Name = name;
         }

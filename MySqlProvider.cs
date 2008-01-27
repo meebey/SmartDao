@@ -10,9 +10,9 @@ namespace Meebey.SmartDao
         {
         }
         
-        public override string GetCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool> columnIsNullables, IList<string> primaryKeys)
+        public override string CreateCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool?> columnIsNullables, IList<string> primaryKeys)
         {
-            string sql = base.GetCreateTableStatement(tableName, columnNames, columnTypes, columnLengths, columnIsNullables, primaryKeys);
+            string sql = base.CreateCreateTableStatement(tableName, columnNames, columnTypes, columnLengths, columnIsNullables, primaryKeys);
             sql = sql.Substring(sql.Length - 1);
             sql += ",\nENGINE = InnoDB)";
             return sql;

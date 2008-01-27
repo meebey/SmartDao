@@ -11,11 +11,12 @@ namespace Meebey.SmartDao
 #if LOG4NET
         private static readonly log4net.ILog _Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 #endif
+        private DatabaseManager _DatabaseManager;
         private Type            _TableType;
         private string          _TableName;
-        private IList<KeyValuePair<ColumnAttribute, FieldInfo>> _Fields;
-        private IDictionary<string, FieldInfo> _ColumnToFields;
-        private DatabaseManager _DatabaseManager;
+        //private IList<KeyValuePair<ColumnAttribute, FieldInfo>> _Fields;
+        //private IDictionary<string, FieldInfo> _ColumnToFields;
+        private IDictionary<string, PropertyInfo> _ColumnToProperties;
         
         public Query(DatabaseManager dbManager)
         {
@@ -24,53 +25,47 @@ namespace Meebey.SmartDao
             }
             
             _DatabaseManager = dbManager;
-            
             _TableType = typeof(T);
-            object[] attrs = _TableType.GetCustomAttributes(typeof(TableAttribute), true);
-            if (attrs == null || attrs.Length == 0) {
-                throw new ArgumentException("T", "Type does not contain a TableAttribute.");
-            }
-            
-            TableAttribute attr = (TableAttribute) attrs[0];
-            _TableName = attr.Name;
         }
         
         private void InitFields()
         {
-            if (_Fields != null) {
+            if (_ColumnToProperties != null) {
                 return;
             }
             
-#if LOG4NET
-            _Logger.Debug("InitFields(): initializing fields...");
-            DateTime start = DateTime.UtcNow;
-#endif
-            FieldInfo[] fields = _TableType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
-            _Fields = new List<KeyValuePair<ColumnAttribute, FieldInfo>>(fields.Length);
-            _ColumnToFields = new Dictionary<string, FieldInfo>(fields.Length);
+            object[] tableAttrs = _TableType.GetCustomAttributes(typeof(TableAttribute), true);
+            if (tableAttrs == null || tableAttrs.Length == 0) {
+                throw new ArgumentException("T", "Type does not contain a TableAttribute.");
+            }
+            
+            TableAttribute tableAttr = (TableAttribute) tableAttrs[0];
+            _TableName = tableAttr.Name;
+            
+            //FieldInfo[] fields = _TableType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+            PropertyInfo[] properties = _TableType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            //_Fields = new List<KeyValuePair<ColumnAttribute, FieldInfo>>(fields.Length);
+            _ColumnToProperties = new Dictionary<string, PropertyInfo>(properties.Length);
             bool foundColumn = false;
-            foreach (FieldInfo field in fields) {
-                object[] columnAttrs = field.GetCustomAttributes(typeof(ColumnAttribute), true);
+            foreach (PropertyInfo property in properties) {
+                object[] columnAttrs = property.GetCustomAttributes(typeof(ColumnAttribute), true);
                 if (columnAttrs == null || columnAttrs.Length == 0) {
                     continue;
                 }
                 foundColumn = true;
                 
-                if (field.FieldType.IsValueType &&
-                    !(field.FieldType.IsGenericType &&
-                      field.FieldType.GetGenericTypeDefinition() == typeof(Nullable<>))) {
-                    throw new NotSupportedException("Fields with ColumnAttribute must be reference types or nullable value types.");
-                }
                 ColumnAttribute columnAttr = (ColumnAttribute) columnAttrs [0];
-                _Fields.Add(new KeyValuePair<ColumnAttribute, FieldInfo>(columnAttr, field));
-                _ColumnToFields.Add(columnAttr.Name, field);
+                if (property.PropertyType.IsValueType &&
+                    !(property.PropertyType.IsGenericType &&
+                      property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))) {
+                    throw new NotSupportedException("Properties with ColumnAttribute (" + columnAttr.Name + ") must be reference types or nullable value types.");
+                }
+                //_Fields.Add(new KeyValuePair<ColumnAttribute, FieldInfo>(columnAttr, field));
+                _ColumnToProperties.Add(columnAttr.Name, property);
             }
             if (!foundColumn) {
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "_TableType");
             }
-#if LOG4NET
-            _Logger.Debug("InitFields(): took: " + (DateTime.UtcNow - start).TotalMilliseconds + " ms");
-#endif
         }
         
         public IList<T> Add(IList<T> entry)
@@ -87,21 +82,18 @@ namespace Meebey.SmartDao
             
             InitFields();
             
-            List<string> columnNames = new List<string>(_Fields.Count);
-            List<object> columnValues = new List<object>(_Fields.Count);
-            foreach (KeyValuePair<ColumnAttribute, FieldInfo> pair in _Fields) {
-                ColumnAttribute column = pair.Key;
-                FieldInfo field = pair.Value;
+            List<string> columnNames = new List<string>(_ColumnToProperties.Count);
+            List<object> columnValues = new List<object>(_ColumnToProperties.Count);
+            foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+                string columnName = kv.Key;
+                PropertyInfo property = kv.Value;
                 
-                object value = field.GetValue(entry);
+                object value = property.GetValue(entry, null);
                 if (value == null) {
                     continue;
                 }
-                columnNames.Add(column.Name);
+                columnNames.Add(columnName);
                 columnValues.Add(value);
-#if LOG4NET
-                //_Logger.Debug("Add(): value: " + value);
-#endif
             }
             
             IDbCommand cmd = _DatabaseManager.CreateInsertCommand(_TableName, columnNames, columnValues);
@@ -114,6 +106,15 @@ namespace Meebey.SmartDao
             return entry;
         }
         
+        public void Set(T entry)
+        {
+            if (entry == null) {
+                throw new ArgumentNullException("entry");
+            }
+            
+            InitFields();
+        }
+        
         public IList<T> GetAll(T template, params string[] selectColumns)
         {
             if (selectColumns == null) {
@@ -122,17 +123,18 @@ namespace Meebey.SmartDao
             
             InitFields();
 
-            List<string> columnNames = new List<string>(_Fields.Count);
-            List<object> columnValues = new List<object>(_Fields.Count);
+            List<string> columnNames = new List<string>(_ColumnToProperties.Count);
+            List<object> columnValues = new List<object>(_ColumnToProperties.Count);
             if (template != null) {
-                foreach (KeyValuePair<ColumnAttribute, FieldInfo> pair in _Fields) {
-                    ColumnAttribute column = pair.Key;
-                    FieldInfo field = pair.Value;
-                    object value = field.GetValue(template);
+            foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+                    string columnName = kv.Key;
+                    PropertyInfo property = kv.Value;
+                    
+                    object value = property.GetValue(template, null);
                     if (value == null) {
                         continue;
                     }
-                    columnNames.Add(column.Name);
+                    columnNames.Add(columnName);
                     columnValues.Add(value);
                 }
             }
@@ -154,17 +156,17 @@ namespace Meebey.SmartDao
                         string name = reader.GetName(i);
                         object value = reader.GetValue(i);
                         
-                        FieldInfo field = _ColumnToFields[name];
-                        if (field == null) {
+                        PropertyInfo property = _ColumnToProperties[name];
+                        if (property == null) {
                             throw new InvalidOperationException("Field for column could not be found: " + name);
                         }
-                        if (!field.FieldType.IsAssignableFrom(value.GetType())) {
+                        if (!property.PropertyType.IsAssignableFrom(value.GetType())) {
                             throw new InvalidOperationException(
                                         String.Format("Field type: {0} of {1} doesn't match column type: {2} for column: {3}",
-                                                      field.FieldType, row.GetType() , value.GetType(), name));
+                                                      property.PropertyType, row.GetType() , value.GetType(), name));
                         }
                         
-                        field.SetValue(row, value);
+                        property.SetValue(row, value, null);
                     }
                 }
                 

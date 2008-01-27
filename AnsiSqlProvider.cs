@@ -11,7 +11,7 @@ namespace Meebey.SmartDao
         {
         }
         
-        public virtual string GetCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool> columnIsNullables, IList<string> primaryKeys)
+        public virtual string CreateCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool?> columnIsNullables, IList<string> primaryKeys)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -44,7 +44,7 @@ namespace Meebey.SmartDao
                 string name = columnNames[idx];
                 Type type = columnTypes[idx]; 
                 int length = columnLengths[idx];
-                bool isNullable = columnIsNullables[idx];
+                bool? isNullable = columnIsNullables[idx];
                 
                 if (type.IsValueType && !IsNullableType(type)) {
                     throw new NotSupportedException("Value type: " + type + " must be nullable for column: " + name);
@@ -86,12 +86,8 @@ namespace Meebey.SmartDao
                     throw new NotSupportedException("Unsupported column data type: " + type);
                 }
                 
-                if (isNullable) {
-                    if (IsNullableType(type)) {
-                        sql.Append(" NULL");
-                    } else {
-                        sql.Append(" NOT NULL");
-                    }
+                if (!isNullable) {
+                    sql.Append(" NOT NULL");
                 }
                 
                 sql.Append(", \n");
@@ -106,12 +102,63 @@ namespace Meebey.SmartDao
                 sql.Remove(sql.Length - 2, 2);
                 sql.Append(")");
             }
-            
+            // CREATE UNIQUE INDEX title_idx ON films (title);
+            // CONSTRAINT valid_discount CHECK (price > discounted_price)
+            // UNIQUE (product_no)
+            // FOREIGN KEY (b, c) REFERENCES other_table (c1, c2)
             sql.Append(")");
             return sql.ToString();
         }
         
-        public virtual string GetDropTableStatement(string tableName)
+        public virtual string CreateInsertStatement(string tableName, IList<string> columnNames, IList<string> columnValues)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            if (columnNames == null) {
+                throw new ArgumentNullException("columnNames");
+            }
+            if (columnValues == null) {
+                throw new ArgumentNullException("columnValues");
+            }
+
+            if (columnNames.Count != columnValues.Count) {
+                throw new ArgumentException("columnNames and columnValues must have the same size.");
+            }
+            
+            if (columnNames.Count == 0) {
+                throw new ArgumentException("columnNames, columnOperators and columnValues must not be empty.");
+            }
+            
+            StringBuilder sql = new StringBuilder("INSERT INTO ");
+            sql.Append(GetTableName(tableName));
+            sql.Append(" (");
+            
+            StringBuilder values = new StringBuilder();
+            for (int idx = 0; idx < columnNames.Count; idx++) {
+                string name = columnNames[idx];
+                string value = columnValues[idx];
+                
+                sql.AppendFormat("{0}, ", GetColumnName(name));
+                values.AppendFormat("{0}, ", value);
+            }
+            sql.Remove(sql.Length - 2, 2);
+            sql.Append(") VALUES (");
+            sql.Append(values);
+            sql.Remove(sql.Length - 2, 2);
+            sql.Append(")");
+            
+            return sql.ToString();
+        }
+        
+        /*
+         * ALTER TABLE [ ONLY ] name [ * ]
+         * RENAME [ COLUMN ] column TO new_column
+         * 
+         * ALTER TABLE name
+         * RENAME TO new_name
+         */
+        public virtual string CreateDropTableStatement(string tableName)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -123,62 +170,85 @@ namespace Meebey.SmartDao
             return sql.ToString();
         }
         
-        public virtual string GetTableExistsStatement(string tableName)
+        public virtual string CreateTableExistsStatement(string tableName)
         {
-            return String.Format("SELECT COUNT(*) FROM {0} WHERE TABLE_NAME = '{1}'", GetTableName("INFORMATION_SCHEMA", "TABLES"), tableName);
+            return CreateSelectStatement("INFORMATION_SCHEMA", "TABLES",
+                                         new string[] {"COUNT(*)"},
+                                         String.Format("TABLE_NAME = '{0}'", tableName));
         }
         
-        public virtual string GetInsertStatement(string tableName, IList<string> columnNames)
+        /*
+        public virtual string GetLastInsertedPrimaryKey()
         {
-            if (tableName == null) {
-                throw new ArgumentNullException("tableName");
+           case MSSQL:
+               // the insert worked and all primary keys are null means IDENTITY was used
+               // Now we can fetch the used IDENTITY value
+               sql.append("SELECT IDENT_CURRENT('" + tablename + "') AS id;");
+               break;
+
+           case MySQL:
+               sql.append("SELECT LAST_INSERT_ID() AS id;");
+               break;
+
+           case PostgreSQL:
+               sql.append("SELECT CURRVAL('" + tablename.getTableName() + "_" + pkFieldName + "_seq') AS id;"); 
+               break;
+        }
+        */
+        
+        public virtual string CreateSelectStatement(string schemaName,
+                                                    string tableName,
+                                                    IList<string> selectColumnNames,
+                                                    IList<string> whereColumnNames,
+                                                    IList<string> whereColumnOperators,
+                                                    IList<string> whereColumnValues)
+        {
+            if (whereColumnNames == null) {
+                throw new ArgumentNullException("whereColumnNames");
             }
-            if (columnNames == null) {
-                throw new ArgumentNullException("columnNames");
+            if (whereColumnOperators == null) {
+                throw new ArgumentNullException("whereColumnOperators");
+            }
+            if (whereColumnValues == null) {
+                throw new ArgumentNullException("whereColumnValues");
             }
 
-            if (columnNames.Count == 0) {
-                throw new ArgumentException("columnNames and columnValues must not be empty.");
+            if (!(whereColumnNames.Count == whereColumnOperators.Count &&
+                  whereColumnOperators.Count == whereColumnValues.Count)) {
+                throw new ArgumentException("columnNames, columnOperators and columnValues must have the same size.");
             }
             
-            StringBuilder sql = new StringBuilder("INSERT INTO ");
-            sql.Append(GetTableName(tableName));
-            sql.Append(" (");
-            
-            StringBuilder values = new StringBuilder();
-            int paramaterNumber = 0;
-            for (int idx = 0; idx < columnNames.Count; idx++) {
-                string name = columnNames[idx];
-                string parameterName = String.Format("{0}{1}", GetParameterCharacter(), paramaterNumber++);
-                
-                sql.AppendFormat("{0}, ", GetColumnName(name));
-                values.AppendFormat("{0}, ", parameterName);
+            if (whereColumnNames.Count == 0) {
+                throw new ArgumentException("whereColumnNames must not be empty.");
             }
-            sql.Remove(sql.Length - 2, 2);
-            sql.Append(") VALUES (");
-            sql.Append(values);
-            sql.Remove(sql.Length - 2, 2);
-            sql.Append(")");
-            
-            return sql.ToString();
+
+            StringBuilder whereClause = new StringBuilder();
+            for (int idx = 0; idx < whereColumnNames.Count; idx++) {
+                whereClause.AppendFormat("{0} {1} {2}, ",
+                                         GetColumnName(whereColumnNames[idx]),
+                                         whereColumnOperators[idx],
+                                         whereColumnValues[idx]);
+            }
+            whereClause.Remove(whereClause.Length - 2, 2);
+            return CreateSelectStatement(schemaName, tableName, selectColumnNames, whereClause.ToString());
         }
         
-        public virtual string GetSelectStatement(string schemaName, string tableName, IList<string> columnNames, string whereClause)
+        public virtual string CreateSelectStatement(string schemaName, string tableName, IList<string> selectColumnNames, string whereClause)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
             }
-            if (columnNames == null) {
-                throw new ArgumentNullException("columnNames");
+            if (selectColumnNames == null) {
+                throw new ArgumentNullException("selectColumnNames");
             }
             
-            if (columnNames.Count == 0) {
-                throw new ArgumentException("columnNames must not be empty.");
+            if (selectColumnNames.Count == 0) {
+                throw new ArgumentException("selectColumnNames must not be empty.");
             }
             
             StringBuilder sql = new StringBuilder("SELECT ");
-            for (int idx = 0; idx < columnNames.Count; idx++) {
-                sql.AppendFormat("{0}, ", GetColumnName(columnNames[idx]));
+            for (int idx = 0; idx < selectColumnNames.Count; idx++) {
+                sql.AppendFormat("{0}, ", GetColumnName(selectColumnNames[idx]));
             }
             sql.Remove(sql.Length - 2, 2);
             
@@ -192,7 +262,12 @@ namespace Meebey.SmartDao
             return sql.ToString();
         }
         
-        public virtual string GetDeleteStatement(string tableName, string whereClause)
+        public virtual string CreateUpdateStatement(string tableName, IList<string> setColumnNames, IList<string> setColumnValues,  string whereClause)
+        {
+            return null;
+        }
+        
+        public virtual string CreateDeleteStatement(string tableName, string whereClause)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");

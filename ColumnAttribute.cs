@@ -2,13 +2,15 @@ using System;
 
 namespace Meebey.SmartDao
 {
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Class)]
     public class ColumnAttribute : Attribute
     {
         private string   _Name;
         private string   _Default;
         private string[] _OldNames;
         private int      _Length;
-        private bool     _IsNullable;
+        private bool?    _IsNullable;
+        private Type     _Type;
         
         public string Name {
             get {
@@ -46,12 +48,21 @@ namespace Meebey.SmartDao
             }
         }
         
-        public bool IsNullable {
+        public bool? IsNullable {
             get {
                 return _IsNullable;
             }
             set {
                 _IsNullable = value;
+            }
+        }
+
+        public Type Type {
+            get {
+                return _Type;
+            }
+            set {
+                _Type = value;
             }
         }
         

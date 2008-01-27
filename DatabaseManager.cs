@@ -75,7 +75,7 @@ namespace Meebey.SmartDao
             
             TableAttribute attr = (TableAttribute) attrs[0];
             
-            string sql = _SqlProvider.GetDeleteStatement(attr.Name, null);
+            string sql = _SqlProvider.CreateDeleteStatement(attr.Name, null);
 #if LOG4NET
             _Logger.Debug("EmptyTable(): SQL: " + sql);
 #endif
@@ -97,7 +97,7 @@ namespace Meebey.SmartDao
             
             TableAttribute attr = (TableAttribute) attrs[0];
             
-            string sql = _SqlProvider.GetDropTableStatement(attr.Name);
+            string sql = _SqlProvider.CreateDropTableStatement(attr.Name);
 #if LOG4NET
             _Logger.Debug("DropTable(): SQL: " + sql);
 #endif
@@ -131,36 +131,38 @@ namespace Meebey.SmartDao
             }
             
 
-            FieldInfo[] fields = tableType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
-            List<string> columnNames       = new List<string>(fields.Length); 
-            List<Type>   columnTypes       = new List<Type>(fields.Length); 
-            List<int>    columnLengths     = new List<int>(fields.Length);
-            List<bool>   columnIsNullables = new List<bool>(fields.Length);
+            
+            
+            //FieldInfo[] fields = tableType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+            PropertyInfo[] properties = tableType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            List<string> columnNames       = new List<string>(properties.Length); 
+            List<Type>   columnTypes       = new List<Type>(properties.Length); 
+            List<int>    columnLengths     = new List<int>(properties.Length);
+            List<bool?>  columnIsNullables = new List<bool?>(properties.Length);
             List<string> primaryKeyColumns = new List<string>();
-            foreach (FieldInfo field in fields) {
-                object[] columnAttrs = field.GetCustomAttributes(typeof(ColumnAttribute), true);
+            foreach (PropertyInfo property in properties) {
+                object[] columnAttrs = property.GetCustomAttributes(typeof(ColumnAttribute), true);
                 if (columnAttrs == null || columnAttrs.Length == 0) {
                     continue;
                 }
                 ColumnAttribute columnAttr = (ColumnAttribute) columnAttrs [0];
                 
                 columnNames.Add(columnAttr.Name);
-                columnTypes.Add(field.FieldType);
+                columnTypes.Add(property.PropertyType);
                 columnLengths.Add(columnAttr.Length);
                 columnIsNullables.Add(columnAttr.IsNullable);
                 
-                object[] pkAttrs = field.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
-                if (pkAttrs == null || pkAttrs.Length == 0) {
-                    continue;
+                object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
+                if (pkAttrs != null && pkAttrs.Length > 0) {
+                    PrimaryKeyAttribute pkAttr = (PrimaryKeyAttribute) pkAttrs [0];
+                    primaryKeyColumns.Add(columnAttr.Name);
                 }
-                PrimaryKeyAttribute pkAttr = (PrimaryKeyAttribute) pkAttrs [0];
-                primaryKeyColumns.Add(columnAttr.Name);
             }
             if (columnNames.Count == 0) {
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "tableType");
             }
             
-            string sql = _SqlProvider.GetCreateTableStatement(tableAttribute.Name,
+            string sql = _SqlProvider.CreateCreateTableStatement(tableAttribute.Name,
                                                               columnNames,
                                                               columnTypes,
                                                               columnLengths,
@@ -228,7 +230,7 @@ namespace Meebey.SmartDao
             List<string> columns = new List<string>(new string[] {"COUNT(*)"});
             string sql = _SqlProvider.GetSelectStatement("INFORMATION_SCHEMA", "TABLES", columns, String.Format("TABLE_NAME = {0}table_name", _SqlProvider.GetParameterCharacter()));
             */
-            string sql = _SqlProvider.GetTableExistsStatement(attr.Name);
+            string sql = _SqlProvider.CreateTableExistsStatement(attr.Name);
 #if LOG4NET
             _Logger.Debug("TableExists(): SQL: " + sql);
 #endif
@@ -260,17 +262,21 @@ namespace Meebey.SmartDao
         public virtual IDbCommand CreateInsertCommand(string tableName,
                                                       IList<string> columnNames,
                                                       IList<object> columnValues) {
-            string sql = _SqlProvider.GetInsertStatement(tableName, columnNames);
             IDbCommand command = _DBConnection.CreateCommand();
-            command.CommandText = sql;
+            List<string> parameterNames = new List<string>();
             for (int idx = 0; idx < columnValues.Count; idx++) {
+                string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
+                parameterNames.Add(parameterName);
+                
                 IDbDataParameter parameter = command.CreateParameter();
-                parameter.ParameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
+                parameter.ParameterName = parameterName;
                 // HACK: map CLI type to DbType
                 //parameter.DbType = DbType.String;
                 parameter.Value = columnValues[idx];
                 command.Parameters.Add(parameter);
             }
+            string sql = _SqlProvider.CreateInsertStatement(tableName, columnNames, parameterNames);
+            command.CommandText = sql;
             return command;
         }
 
@@ -293,6 +299,7 @@ namespace Meebey.SmartDao
             
             StringBuilder whereClause = new StringBuilder();
             IDbCommand command = _DBConnection.CreateCommand();
+            // TODO: refactor to use CreateSelectStatement() with column names, operators and values
             for (int idx = 0; idx < whereColumnNames.Count; idx++) {
                 string name = whereColumnNames[idx];
                 object value = whereColumnValues[idx];
@@ -321,7 +328,7 @@ namespace Meebey.SmartDao
                 whereClause.Remove(whereClause.Length - 4, 4);
             }
             
-            string sql = _SqlProvider.GetSelectStatement(null, tableName, selectColumnNames, whereClause.ToString());
+            string sql = _SqlProvider.CreateSelectStatement(null, tableName, selectColumnNames, whereClause.ToString());
             command.CommandText = sql;
             return command;
         }

@@ -20,7 +20,7 @@ namespace Meebey.SmartDao
             return base.GetDataTypeName(dbType);
         }
         
-        public override string GetTableExistsStatement(string tableName)
+        public override string CreateTableExistsStatement(string tableName)
         {
             return String.Format("SELECT COUNT(*) " +
                                  "FROM sqlite_master " +
