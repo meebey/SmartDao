@@ -15,7 +15,7 @@
   </StartMode>
   <MonoDevelop.ChangeLogAddIn.ChangeLogInfo policy="OneChangeLogInProjectRootDirectory" />
   <Entries>
-    <Entry filename="SmartDao.mdp" />
+    <Entry filename="SmartDao/SmartDao.mdp" />
     <Entry filename="SmartDao.Tests/SmartDao.Tests.mdp" />
   </Entries>
 </Combine>
