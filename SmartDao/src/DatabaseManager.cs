@@ -68,14 +68,7 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("tableType");
             }
             
-            object[] attrs = tableType.GetCustomAttributes(typeof(TableAttribute), true);
-            if (attrs == null || attrs.Length == 0) {
-                throw new ArgumentException("Type does not contain a TableAttribute.", "tableType");
-            }
-            
-            TableAttribute attr = (TableAttribute) attrs[0];
-            
-            string sql = _SqlProvider.CreateDeleteStatement(attr.Name, null);
+            string sql = _SqlProvider.CreateDeleteStatement(GetTableName(tableType), null);
 #if LOG4NET
             _Logger.Debug("EmptyTable(): SQL: " + sql);
 #endif
@@ -90,14 +83,7 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("tableType");
             }
             
-            object[] attrs = tableType.GetCustomAttributes(typeof(TableAttribute), true);
-            if (attrs == null || attrs.Length == 0) {
-                throw new ArgumentException("Type does not contain a TableAttribute.", "tableType");
-            }
-            
-            TableAttribute attr = (TableAttribute) attrs[0];
-            
-            string sql = _SqlProvider.CreateDropTableStatement(attr.Name);
+            string sql = _SqlProvider.CreateDropTableStatement(GetTableName(tableType));
 #if LOG4NET
             _Logger.Debug("DropTable(): SQL: " + sql);
 #endif
@@ -143,7 +129,13 @@ namespace Meebey.SmartDao
                 }
                 ColumnAttribute columnAttr = (ColumnAttribute) columnAttrs [0];
                 
-                columnNames.Add(columnAttr.Name);
+                string columnName;
+                if (columnAttr.Name != null) {
+                    columnName = columnAttr.Name;
+                } else {
+                    columnName = property.Name;
+                }
+                columnNames.Add(columnName);
                 columnTypes.Add(property.PropertyType);
                 columnLengths.Add(columnAttr.Length);
                 columnIsNullables.Add(columnAttr.IsNullable);
@@ -157,15 +149,7 @@ namespace Meebey.SmartDao
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "tableType");
             }
             
-            string tableName;
-            if (tableAttribute.Name != null) {
-                tableName = tableAttribute.Name;
-            } else {
-                string fullName = tableType.FullName;
-                tableName = fullName.Substring(fullName.LastIndexOf(".") + 1);
-            }
-            
-            string sql = _SqlProvider.CreateCreateTableStatement(tableName,
+            string sql = _SqlProvider.CreateCreateTableStatement(GetTableName(tableType),
                                                                  columnNames,
                                                                  columnTypes,
                                                                  columnLengths,
@@ -222,14 +206,7 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("tableType");
             }
             
-            object[] attrs = tableType.GetCustomAttributes(typeof(TableAttribute), true);
-            if (attrs == null || attrs.Length == 0) {
-                throw new ArgumentException("tableType", "Type does not contain TableAttribute.");
-            }
-            
-            TableAttribute attr = (TableAttribute) attrs[0];
-            
-            string sql = _SqlProvider.CreateTableExistsStatement(attr.Name);
+            string sql = _SqlProvider.CreateTableExistsStatement(GetTableName(tableType));
 #if LOG4NET
             _Logger.Debug("TableExists(): SQL: " + sql);
 #endif
@@ -405,6 +382,26 @@ namespace Meebey.SmartDao
                                                             offset);
             command.CommandText = sql;
             return command;
+        }
+        
+        private string GetTableName(Type tableType)
+        {
+            if (tableType == null) {
+                throw new ArgumentNullException("tableType");
+            }
+            
+            object[] attrs = tableType.GetCustomAttributes(typeof(TableAttribute), true);
+            if (attrs == null || attrs.Length == 0) {
+                throw new ArgumentException("tableType", "Type does not contain TableAttribute.");
+            }
+            
+            TableAttribute attr = (TableAttribute) attrs[0];
+            if (attr.Name != null) {
+                return attr.Name;
+            }
+            
+            string fullName = tableType.FullName;
+            return fullName.Substring(fullName.LastIndexOf(".") + 1);
         }
     }
 }

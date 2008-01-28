@@ -58,11 +58,17 @@ namespace Meebey.SmartDao
                       property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))) {
                     throw new NotSupportedException("Properties with ColumnAttribute (" + columnAttr.Name + ") must be reference types or nullable value types.");
                 }
-                _ColumnToProperties.Add(columnAttr.Name, property);
+                string columnName;
+                if (columnAttr.Name != null) {
+                    columnName = columnAttr.Name;
+                } else {
+                    columnName = property.Name;
+                }
+                _ColumnToProperties.Add(columnName, property);
                 
                 object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
                 if (pkAttrs != null && pkAttrs.Length > 0) {
-                    _PrimaryKeyColumns.Add(columnAttr.Name);
+                    _PrimaryKeyColumns.Add(columnName);
                 }
             }
             if (!foundColumn) {
