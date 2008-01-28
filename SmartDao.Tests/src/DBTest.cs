@@ -1,6 +1,6 @@
 using System;
 
-namespace Meebey.SmartDao
+namespace Meebey.SmartDao.Tests
 {
     [Table("test_table")]
     [Column(Name = "unused_column", Type = typeof(string))]

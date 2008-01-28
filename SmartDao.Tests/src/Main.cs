@@ -1,12 +1,3 @@
-///*
-// * $Id$
-// * $URL$
-// * $Revision$
-// * $Author$
-// * $Date$
-// */
-//
-
 using System;
 using System.Threading;
 using System.Data;
@@ -17,7 +8,7 @@ using MySql.Data.MySqlClient;
 
 namespace Meebey.SmartDao.Tests
 {
-    class MainClass
+    public class MainClass
     {
         public static void Main(string[] args)
         {
@@ -78,6 +69,8 @@ namespace Meebey.SmartDao.Tests
             provider = new PostgreSqlProvider();
             */
             
+            Console.WriteLine("--- " + con + " ---");
+            Console.WriteLine("--- " + provider + " ---");
             int count = 1000;
             DateTime start, stop;
 

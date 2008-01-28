@@ -1,13 +1,13 @@
 <Project name="SmartDao" fileversion="2.0" DefaultNamespace="Meebey.SmartDao" language="C#" clr-version="Net_2_0" ctype="DotNetProject">
   <Configurations active="Release">
     <Configuration name="Debug" ctype="DotNetProjectConfiguration">
-      <Output directory="bin/debug" assemblyKeyFile="." assembly="Meebey.SmartDao" />
+      <Output directory="../bin/debug" assemblyKeyFile="." assembly="Meebey.SmartDao" />
       <Build debugmode="True" target="Library" />
       <Execution runwithwarnings="True" externalconsole="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
       <CodeGeneration compiler="Mcs" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" definesymbols="DEBUG,TRACE,LOG4NET" generatexmldocumentation="False" win32Icon="." additionalargs="-langversion:linq" ctype="CSharpCompilerParameters" />
     </Configuration>
     <Configuration name="Release" ctype="DotNetProjectConfiguration">
-      <Output directory="bin/release" assemblyKeyFile="." assembly="Meebey.SmartDao" />
+      <Output directory="../bin/release" assemblyKeyFile="." assembly="Meebey.SmartDao" />
       <Build debugmode="False" target="Library" />
       <Execution runwithwarnings="True" externalconsole="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
       <CodeGeneration compiler="Mcs" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" generatexmldocumentation="False" win32Icon="." additionalargs="-langversion:linq" ctype="CSharpCompilerParameters" />
