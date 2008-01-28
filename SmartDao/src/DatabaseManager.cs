@@ -157,12 +157,20 @@ namespace Meebey.SmartDao
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "tableType");
             }
             
-            string sql = _SqlProvider.CreateCreateTableStatement(tableAttribute.Name,
-                                                              columnNames,
-                                                              columnTypes,
-                                                              columnLengths,
-                                                              columnIsNullables,
-                                                              primaryKeyColumns);
+            string tableName;
+            if (tableAttribute.Name != null) {
+                tableName = tableAttribute.Name;
+            } else {
+                string fullName = tableType.FullName;
+                tableName = fullName.Substring(fullName.LastIndexOf(".") + 1);
+            }
+            
+            string sql = _SqlProvider.CreateCreateTableStatement(tableName,
+                                                                 columnNames,
+                                                                 columnTypes,
+                                                                 columnLengths,
+                                                                 columnIsNullables,
+                                                                 primaryKeyColumns);
 #if LOG4NET
             _Logger.Debug("CreateTable(): SQL: " + sql);
 #endif
