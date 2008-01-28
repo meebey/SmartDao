@@ -133,6 +133,14 @@ namespace Meebey.SmartDao
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
+            start = DateTime.UtcNow;
+            template = new DBTest();
+            template.PKInt32 = 1;
+            template.StringColumn = "foobar";
+            query.SetAll(template);
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.SetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+
             con.Close();
             con.Dispose();
             

@@ -14,9 +14,8 @@ namespace Meebey.SmartDao
         private DatabaseManager _DatabaseManager;
         private Type            _TableType;
         private string          _TableName;
-        //private IList<KeyValuePair<ColumnAttribute, FieldInfo>> _Fields;
-        //private IDictionary<string, FieldInfo> _ColumnToFields;
         private IDictionary<string, PropertyInfo> _ColumnToProperties;
+        private IList<string>                     _PrimaryKeyColumns;
         
         public Query(DatabaseManager dbManager)
         {
@@ -42,10 +41,9 @@ namespace Meebey.SmartDao
             TableAttribute tableAttr = (TableAttribute) tableAttrs[0];
             _TableName = tableAttr.Name;
             
-            //FieldInfo[] fields = _TableType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
             PropertyInfo[] properties = _TableType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            //_Fields = new List<KeyValuePair<ColumnAttribute, FieldInfo>>(fields.Length);
             _ColumnToProperties = new Dictionary<string, PropertyInfo>(properties.Length);
+            _PrimaryKeyColumns = new List<string>();
             bool foundColumn = false;
             foreach (PropertyInfo property in properties) {
                 object[] columnAttrs = property.GetCustomAttributes(typeof(ColumnAttribute), true);
@@ -54,14 +52,18 @@ namespace Meebey.SmartDao
                 }
                 foundColumn = true;
                 
-                ColumnAttribute columnAttr = (ColumnAttribute) columnAttrs [0];
+                ColumnAttribute columnAttr = (ColumnAttribute) columnAttrs[0];
                 if (property.PropertyType.IsValueType &&
                     !(property.PropertyType.IsGenericType &&
                       property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))) {
                     throw new NotSupportedException("Properties with ColumnAttribute (" + columnAttr.Name + ") must be reference types or nullable value types.");
                 }
-                //_Fields.Add(new KeyValuePair<ColumnAttribute, FieldInfo>(columnAttr, field));
                 _ColumnToProperties.Add(columnAttr.Name, property);
+                
+                object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
+                if (pkAttrs != null && pkAttrs.Length > 0) {
+                    _PrimaryKeyColumns.Add(columnAttr.Name);
+                }
             }
             if (!foundColumn) {
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "_TableType");
@@ -106,13 +108,46 @@ namespace Meebey.SmartDao
             return entry;
         }
         
-        public void Set(T entry)
+        public void SetAll(T entry)
         {
             if (entry == null) {
                 throw new ArgumentNullException("entry");
             }
             
             InitFields();
+            
+            List<string> setColumnNames       = new List<string>();
+            List<object> setColumnValues      = new List<object>();
+            List<string> whereColumnNames     = new List<string>(_PrimaryKeyColumns.Count);
+            List<string> whereColumnOperators = new List<string>(_PrimaryKeyColumns.Count);
+            List<object> whereColumnValues    = new List<object>(_PrimaryKeyColumns.Count);
+            foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+                string columnName = kv.Key;
+                PropertyInfo property = kv.Value;
+
+                object value = property.GetValue(entry, null);
+                if (value == null) {
+                    continue;
+                }
+                
+                if (_PrimaryKeyColumns.Contains(columnName)) {
+                    whereColumnNames.Add(columnName);
+                    whereColumnOperators.Add("=");
+                    whereColumnValues.Add(value);
+                } else {
+                    setColumnNames.Add(columnName);
+                    setColumnValues.Add(value);
+                }
+            }
+            
+            IDbCommand cmd = _DatabaseManager.CreateUpdateCommand(_TableName, setColumnNames, setColumnValues, whereColumnNames, whereColumnOperators, whereColumnValues);
+#if LOG4NET
+            _Logger.Debug("Set(): SQL: " + cmd.CommandText);
+#endif
+            int res = cmd.ExecuteNonQuery();
+#if LOG4NET
+            _Logger.Debug("Set(): res: " + res);
+#endif
         }
         
         public IList<T> GetAll(T template, params string[] selectColumns)
@@ -123,23 +158,34 @@ namespace Meebey.SmartDao
             
             InitFields();
 
-            List<string> columnNames = new List<string>(_ColumnToProperties.Count);
-            List<object> columnValues = new List<object>(_ColumnToProperties.Count);
+            List<string> columnNames     = new List<string>(_ColumnToProperties.Count);
+            List<string> columnOperators = new List<string>(_ColumnToProperties.Count);
+            List<object> columnValues    = new List<object>(_ColumnToProperties.Count);
             if (template != null) {
-            foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+                foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
                     string columnName = kv.Key;
                     PropertyInfo property = kv.Value;
-                    
+
+                    string @operator = "=";
                     object value = property.GetValue(template, null);
                     if (value == null) {
                         continue;
                     }
+                    
+                    if (value is string) {
+                        string strValue = (string) value;
+                        if (strValue.StartsWith("%") || strValue.EndsWith("%")) {
+                            @operator = "LIKE";
+                        }
+                    }
+                    
                     columnNames.Add(columnName);
+                    columnOperators.Add(@operator);
                     columnValues.Add(value);
                 }
             }
             
-            IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName, selectColumns, columnNames, columnValues);
+            IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName, selectColumns, columnNames, columnOperators, columnValues);
 #if LOG4NET
             _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
 #endif

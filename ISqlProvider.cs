@@ -30,8 +30,13 @@ namespace Meebey.SmartDao
                                      IList<string> setColumnNames,
                                      IList<string> setColumnValues,
                                      string whereClause);
+        string CreateUpdateStatement(string tableName,
+                                     IList<string> setColumnNames,
+                                     IList<string> setColumnValues,
+                                     IList<string> whereColumnNames,
+                                     IList<string> whereColumnOperators,
+                                     IList<string> whereColumnValues);
         string CreateDeleteStatement(string tableName, string whereClause);
-
         string GetDataTypeName(DbType dbType);
         string GetColumnName(string columnName);
         string GetTableName(string tableName);

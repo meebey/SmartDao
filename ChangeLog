@@ -1,3 +1,9 @@
+2008-01-28  Mirco Bauer <meebey@meebey.net> 
+
+	* ISqlProvider.cs, AnsiSqlProvider.cs, DatabaseManager.cs, Query.cs:
+	  implemented AnsiSqlProvider.CreateUpdateStatement(),
+	  DatabaseManager.CreateUpdateCommand() and Query.SetAll()
+
 2008-01-27  Mirco Bauer <meebey@meebey.net> 
 
 	* SqliteProvider.cs, ISqlProvider.cs, AnsiSqlProvider.cs: renamed

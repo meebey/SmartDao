@@ -130,10 +130,6 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("tableAttribute");
             }
             
-
-            
-            
-            //FieldInfo[] fields = tableType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
             PropertyInfo[] properties = tableType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             List<string> columnNames       = new List<string>(properties.Length); 
             List<Type>   columnTypes       = new List<Type>(properties.Length); 
@@ -154,7 +150,6 @@ namespace Meebey.SmartDao
                 
                 object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
                 if (pkAttrs != null && pkAttrs.Length > 0) {
-                    PrimaryKeyAttribute pkAttr = (PrimaryKeyAttribute) pkAttrs [0];
                     primaryKeyColumns.Add(columnAttr.Name);
                 }
             }
@@ -261,7 +256,18 @@ namespace Meebey.SmartDao
         
         public virtual IDbCommand CreateInsertCommand(string tableName,
                                                       IList<string> columnNames,
-                                                      IList<object> columnValues) {
+                                                      IList<object> columnValues)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            if (columnNames == null) {
+                throw new ArgumentNullException("columnNames");
+            }
+            if (columnValues == null) {
+                throw new ArgumentNullException("columnValues");
+            }
+            
             IDbCommand command = _DBConnection.CreateCommand();
             List<string> parameterNames = new List<string>();
             for (int idx = 0; idx < columnValues.Count; idx++) {
@@ -280,10 +286,70 @@ namespace Meebey.SmartDao
             return command;
         }
 
+        public virtual IDbCommand CreateUpdateCommand(string tableName,
+                                                      IList<string> setColumnNames,
+                                                      IList<object> setColumnValues,
+                                                      IList<string> whereColumnNames,
+                                                      IList<string> whereColumnOperators,
+                                                      IList<object> whereColumnValues)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            if (setColumnNames == null) {
+                throw new ArgumentNullException("setColumnNames");
+            }
+            if (setColumnValues == null) {
+                throw new ArgumentNullException("setColumnValues");
+            }
+            
+            IDbCommand command = _DBConnection.CreateCommand();
+            List<string> setParameterNames   = new List<string>(setColumnValues.Count);
+            for (int idx = 0; idx < setColumnNames.Count; idx++) {
+                string parameterName = String.Format("{0}{1}",
+                                                     _SqlProvider.GetParameterCharacter(),
+                                                     idx);
+                setParameterNames.Add(parameterName);
+                
+                IDbDataParameter parameter = command.CreateParameter();
+                parameter.ParameterName = parameterName;
+                // HACK: map CLI type to DbType
+                //parameter.DbType = DbType.String;
+                parameter.Value = setColumnValues[idx];
+                command.Parameters.Add(parameter);
+            }
+            
+            List<string> whereParameterNames = new List<string>(whereColumnValues.Count);
+            for (int idx = 0; idx < whereColumnNames.Count; idx++) {
+                string parameterName = String.Format("{0}{1}",
+                                                     _SqlProvider.GetParameterCharacter(),
+                                                     setColumnValues.Count + idx);
+                whereParameterNames.Add(parameterName);
+                
+                IDbDataParameter parameter = command.CreateParameter();
+                parameter.ParameterName = parameterName;
+                // HACK: map CLI type to DbType
+                //parameter.DbType = DbType.String;
+                parameter.Value = whereColumnValues[idx];
+                command.Parameters.Add(parameter);
+            }
+            
+            string sql = _SqlProvider.CreateUpdateStatement(tableName,
+                                                            setColumnNames,
+                                                            setParameterNames,
+                                                            whereColumnNames,
+                                                            whereColumnOperators,
+                                                            whereParameterNames);
+            command.CommandText = sql;
+            return command;
+        }
+        
         public virtual IDbCommand CreateSelectCommand(string tableName,
                                                       IList<string> selectColumnNames,
                                                       IList<string> whereColumnNames,
-                                                      IList<object> whereColumnValues) {
+                                                      IList<string> whereColumnOperators,
+                                                      IList<object> whereColumnValues)
+        {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
             }
@@ -293,42 +359,29 @@ namespace Meebey.SmartDao
             if (whereColumnNames == null) {
                 throw new ArgumentNullException("whereColumnNames");
             }
+            if (whereColumnOperators == null) {
+                throw new ArgumentNullException("whereColumnOperators");
+            }
             if (whereColumnValues == null) {
                 throw new ArgumentNullException("whereColumnValues");
             }
             
-            StringBuilder whereClause = new StringBuilder();
             IDbCommand command = _DBConnection.CreateCommand();
-            // TODO: refactor to use CreateSelectStatement() with column names, operators and values
+            List<string> parameterNames = new List<string>();
             for (int idx = 0; idx < whereColumnNames.Count; idx++) {
-                string name = whereColumnNames[idx];
                 object value = whereColumnValues[idx];
-                
-                whereClause.Append(_SqlProvider.GetColumnName(name));
-                if (value is string) {
-                    string strValue = (string) value;
-                    if (strValue.StartsWith("%") || strValue.EndsWith("%")) {
-                        whereClause.Append(" LIKE ");
-                    } else {
-                        whereClause.Append(" = ");
-                    }
-                } else {
-                    whereClause.Append(" = ");
-                }
-                whereClause.AppendFormat("{0}{1} AND ", _SqlProvider.GetParameterCharacter(), idx);
+                string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
                 
                 IDbDataParameter parameter = command.CreateParameter();
-                parameter.ParameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
+                parameter.ParameterName = parameterName;
                 // HACK: map CLI type to DbType
                 //parameter.DbType = DbType.String;
                 parameter.Value = value;
                 command.Parameters.Add(parameter);
-            }
-            if (whereColumnNames.Count > 0) {
-                whereClause.Remove(whereClause.Length - 4, 4);
+                parameterNames.Add(parameterName);
             }
             
-            string sql = _SqlProvider.CreateSelectStatement(null, tableName, selectColumnNames, whereClause.ToString());
+            string sql = _SqlProvider.CreateSelectStatement(null, tableName, selectColumnNames, whereColumnNames, whereColumnOperators, parameterNames);
             command.CommandText = sql;
             return command;
         }

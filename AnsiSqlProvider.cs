@@ -218,19 +218,20 @@ namespace Meebey.SmartDao
                 throw new ArgumentException("columnNames, columnOperators and columnValues must have the same size.");
             }
             
-            if (whereColumnNames.Count == 0) {
-                throw new ArgumentException("whereColumnNames must not be empty.");
+            StringBuilder whereClause = null;
+            if (whereColumnNames.Count > 0) {
+                whereClause = new StringBuilder();
+                for (int idx = 0; idx < whereColumnNames.Count; idx++) {
+                    whereClause.AppendFormat("{0} {1} {2}, ",
+                                             GetColumnName(whereColumnNames[idx]),
+                                             whereColumnOperators[idx],
+                                             whereColumnValues[idx]);
+                }
+                whereClause.Remove(whereClause.Length - 2, 2);
             }
-
-            StringBuilder whereClause = new StringBuilder();
-            for (int idx = 0; idx < whereColumnNames.Count; idx++) {
-                whereClause.AppendFormat("{0} {1} {2}, ",
-                                         GetColumnName(whereColumnNames[idx]),
-                                         whereColumnOperators[idx],
-                                         whereColumnValues[idx]);
-            }
-            whereClause.Remove(whereClause.Length - 2, 2);
-            return CreateSelectStatement(schemaName, tableName, selectColumnNames, whereClause.ToString());
+            return CreateSelectStatement(schemaName, tableName,
+                                         selectColumnNames,
+                                         whereClause != null ? whereClause.ToString() : null);
         }
         
         public virtual string CreateSelectStatement(string schemaName, string tableName, IList<string> selectColumnNames, string whereClause)
@@ -262,9 +263,74 @@ namespace Meebey.SmartDao
             return sql.ToString();
         }
         
-        public virtual string CreateUpdateStatement(string tableName, IList<string> setColumnNames, IList<string> setColumnValues,  string whereClause)
+        public virtual string CreateUpdateStatement(string tableName,
+                                                    IList<string> setColumnNames,
+                                                    IList<string> setColumnValues,
+                                                    IList<string> whereColumnNames,
+                                                    IList<string> whereColumnOperators,
+                                                    IList<string> whereColumnValues)
         {
-            return null;
+            if (setColumnNames == null) {
+                throw new ArgumentNullException("setColumnNames");
+            }
+            if (setColumnValues == null) {
+                throw new ArgumentNullException("setColumnValues");
+            }
+
+            if (setColumnNames.Count != setColumnValues.Count) {
+                throw new ArgumentException("setColumnNames and setColumnValues must have the same size.");
+            }
+            
+            StringBuilder whereClause = null;
+            if (whereColumnNames.Count > 0) {
+                whereClause = new StringBuilder();
+                for (int idx = 0; idx < whereColumnNames.Count; idx++) {
+                    whereClause.AppendFormat("{0} {1} {2}, ",
+                                             GetColumnName(whereColumnNames[idx]),
+                                             whereColumnOperators[idx],
+                                             whereColumnValues[idx]);
+                }
+                whereClause.Remove(whereClause.Length - 2, 2);
+            }
+            return CreateUpdateStatement(tableName, setColumnNames, setColumnValues,
+                                         whereClause != null ? whereClause.ToString() : null);
+        }
+        
+        public virtual string CreateUpdateStatement(string tableName,
+                                                    IList<string> setColumnNames,
+                                                    IList<string> setColumnValues,
+                                                    string whereClause)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            if (setColumnNames == null) {
+                throw new ArgumentNullException("selectColumnNames");
+            }
+            if (setColumnValues == null) {
+                throw new ArgumentNullException("setColumnValues");
+            }
+            if (setColumnValues == null) {
+                throw new ArgumentNullException("setColumnValues");
+            }
+            
+            if (setColumnNames.Count == 0) {
+                throw new ArgumentException("setColumnNames must not be empty.");
+            }
+            
+            StringBuilder sql = new StringBuilder("UPDATE ");
+            sql.Append(GetTableName(tableName));
+            sql.Append(" SET ");
+            for (int idx = 0; idx < setColumnNames.Count; idx++) {
+                sql.AppendFormat("{0} = {1}, ", GetColumnName(setColumnNames[idx]), setColumnValues[idx]);
+            }
+            sql.Remove(sql.Length - 2, 2);
+            
+            if (whereClause != null && whereClause.Length != 0) {
+                sql.AppendFormat(" WHERE {0}", whereClause);
+            }
+            
+            return sql.ToString();
         }
         
         public virtual string CreateDeleteStatement(string tableName, string whereClause)
