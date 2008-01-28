@@ -1,15 +1,23 @@
+///*
+// * $Id$
+// * $URL$
+// * $Revision$
+// * $Author$
+// * $Date$
+// */
+//
+
 using System;
+using System.Threading;
 using System.Data;
 using System.Data.SqlClient;
-using System.Threading;
 using System.Collections.Generic;
 using Npgsql;
 using MySql.Data.MySqlClient;
-using Mono.Data.Sqlite;
 
-namespace Meebey.SmartDao
+namespace Meebey.SmartDao.Tests
 {
-    public class SmartDaoTest
+    class MainClass
     {
         public static void Main(string[] args)
         {
@@ -19,10 +27,12 @@ namespace Meebey.SmartDao
             IDbConnection con;
             ISqlProvider provider;
             
+            /*
             con = new NpgsqlConnection("Server=localhost;" + 
                                        "Database=test;" +
                                        "User ID=postgres;");
-            provider = new AnsiSqlProvider();
+            provider = new PostgreSqlProvider();
+            */
             
             /*
             con = new MySqlConnection("Server=localhost;" + 
@@ -41,32 +51,51 @@ namespace Meebey.SmartDao
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
-            provider = new AnsiSqlProvider();
+            provider = new PostgreSqlProvider();
             */
             
             /*
             con = new SqlConnection("Server=mussolini.gsd-software.net;" + 
+            //con = new SqlConnection("Server=62.80.20.132;" + 
                                     "Database=test;" +
                                     "User ID=test;" +
                                     "Password=test;");
-            provider = new MSSqlProvider();
+            provider = new MicrosoftSqlProvider();
             */
             
-            /*
             con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
-            provider = new AnsiSqlProvider();
-            */
+            provider = new PostgreSqlProvider();
             
             /*
             con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
+            //con = new NpgsqlConnection("Server=192.168.8.111;" + 
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
-            provider = new AnsiSqlProvider();
+            provider = new PostgreSqlProvider();
             */
+            
+            int count = 1000;
+            DateTime start, stop;
+
+            // WARMUP
+            con.Open();
+            con.Close();
+            
+            start = DateTime.UtcNow;
+            con.Open();
+            stop = DateTime.UtcNow;
+            Console.WriteLine("--- CONNECT ---");
+            Console.WriteLine("IDbConnect.Open(): took: " + (stop - start).Milliseconds + " ms");
+            
+            start = DateTime.UtcNow;
+            con.Close();
+            stop = DateTime.UtcNow;
+            Console.WriteLine("--- DISCONNECT ---");
+            Console.WriteLine("IDbConnect.Close(): took: " + (stop - start).Milliseconds + " ms");
             
             con.Open();
             DatabaseManager dbMan = new DatabaseManager(con, provider);
@@ -82,8 +111,6 @@ namespace Meebey.SmartDao
             dbMan.EmptyTable(typeof(DBTest));
 
             // RUN
-            int count = 1000;
-            DateTime start, stop;
             
             // HARD CLEAN UP
             dbMan.DropTable(typeof(DBTest));
@@ -111,6 +138,7 @@ namespace Meebey.SmartDao
             stop = DateTime.UtcNow;
             double queryAvg = (stop - start).TotalMilliseconds / count;
             
+            Console.WriteLine("--- INSERT (" + count + " ---");
             Console.WriteLine("raw SQL INSERTs avg: " + sqlAvg + " ms/query");
             Console.WriteLine("query.Add() avg: " + queryAvg  + " ms/query");
             
@@ -121,6 +149,7 @@ namespace Meebey.SmartDao
             start = DateTime.UtcNow;
             tests = query.GetAll(null, "*");
             stop = DateTime.UtcNow;
+            Console.WriteLine("--- SELECT * ---");
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
@@ -130,6 +159,7 @@ namespace Meebey.SmartDao
             template.PKInt32 = 1;
             tests = query.GetAll(template, "pk_int32");
             stop = DateTime.UtcNow;
+            Console.WriteLine("--- SELECT pk_int32 WHERE pk_int32 = 1 ---");
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
@@ -137,8 +167,10 @@ namespace Meebey.SmartDao
             template = new DBTest();
             template.PKInt32 = 1;
             template.StringColumn = "foobar";
-            query.SetAll(template);
+            int rows = query.SetAll(template);
             stop = DateTime.UtcNow;
+            Console.WriteLine("--- UPDATE string_column WHERE pk_int32 = 1 ---");
+            Console.WriteLine("query.SetAll() rows: " + rows);
             Console.WriteLine("query.SetAll() took: " + (stop - start).TotalMilliseconds + " ms");
 
             con.Close();

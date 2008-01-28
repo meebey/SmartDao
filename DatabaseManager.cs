@@ -221,23 +221,12 @@ namespace Meebey.SmartDao
             
             TableAttribute attr = (TableAttribute) attrs[0];
             
-            /*
-            List<string> columns = new List<string>(new string[] {"COUNT(*)"});
-            string sql = _SqlProvider.GetSelectStatement("INFORMATION_SCHEMA", "TABLES", columns, String.Format("TABLE_NAME = {0}table_name", _SqlProvider.GetParameterCharacter()));
-            */
             string sql = _SqlProvider.CreateTableExistsStatement(attr.Name);
 #if LOG4NET
             _Logger.Debug("TableExists(): SQL: " + sql);
 #endif
             IDbCommand com = _DBConnection.CreateCommand();
             com.CommandText = sql;
-            /*
-            IDbDataParameter param = com.CreateParameter();
-            param.ParameterName = String.Format("{0}table_name", _SqlProvider.GetParameterCharacter());
-            param.DbType = DbType.String;
-            param.Value = attr.Name;
-            com.Parameters.Add(param);
-            */
             
             object res = com.ExecuteScalar();
             if (res is Int32) {
@@ -272,14 +261,24 @@ namespace Meebey.SmartDao
             List<string> parameterNames = new List<string>();
             for (int idx = 0; idx < columnValues.Count; idx++) {
                 string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
-                parameterNames.Add(parameterName);
+                object value = columnValues[idx];
                 
+                // HACK: SqlConnection of Mono 1.2.6 sends DateTime incorrectly as varchar
+                if (_DBConnection is System.Data.SqlClient.SqlConnection &&
+                    value is DateTime) {
+                    value = ((DateTime) value).ToString("s");
+                }
+                
+                DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
-                // HACK: map CLI type to DbType
-                //parameter.DbType = DbType.String;
-                parameter.Value = columnValues[idx];
+                parameter.DbType = dbType;
+                parameter.Value = value;
                 command.Parameters.Add(parameter);
+                parameterNames.Add(parameterName);
+#if LOG4NET
+               // _Logger.Debug("parameterName: " + parameterName + " dbType: " + dbType + " valueType: " + value.GetType() +  " value: " + value);
+#endif
             }
             string sql = _SqlProvider.CreateInsertStatement(tableName, columnNames, parameterNames);
             command.CommandText = sql;
@@ -309,14 +308,15 @@ namespace Meebey.SmartDao
                 string parameterName = String.Format("{0}{1}",
                                                      _SqlProvider.GetParameterCharacter(),
                                                      idx);
-                setParameterNames.Add(parameterName);
+                object value = setColumnValues[idx];
+                DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
-                // HACK: map CLI type to DbType
-                //parameter.DbType = DbType.String;
-                parameter.Value = setColumnValues[idx];
+                parameter.DbType = dbType;
+                parameter.Value = value;
                 command.Parameters.Add(parameter);
+                setParameterNames.Add(parameterName);
             }
             
             List<string> whereParameterNames = new List<string>(whereColumnValues.Count);
@@ -324,14 +324,15 @@ namespace Meebey.SmartDao
                 string parameterName = String.Format("{0}{1}",
                                                      _SqlProvider.GetParameterCharacter(),
                                                      setColumnValues.Count + idx);
-                whereParameterNames.Add(parameterName);
+                object value = whereColumnValues[idx];
+                DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
-                // HACK: map CLI type to DbType
-                //parameter.DbType = DbType.String;
-                parameter.Value = whereColumnValues[idx];
+                parameter.DbType = dbType;
+                parameter.Value = value;
                 command.Parameters.Add(parameter);
+                whereParameterNames.Add(parameterName);
             }
             
             string sql = _SqlProvider.CreateUpdateStatement(tableName,
@@ -348,7 +349,11 @@ namespace Meebey.SmartDao
                                                       IList<string> selectColumnNames,
                                                       IList<string> whereColumnNames,
                                                       IList<string> whereColumnOperators,
-                                                      IList<object> whereColumnValues)
+                                                      IList<object> whereColumnValues,
+                                                      IList<string> orderByColumnNames,
+                                                      IList<string> orderByColumnOrders,
+                                                      int? limit,
+                                                      int? offset)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -369,19 +374,27 @@ namespace Meebey.SmartDao
             IDbCommand command = _DBConnection.CreateCommand();
             List<string> parameterNames = new List<string>();
             for (int idx = 0; idx < whereColumnNames.Count; idx++) {
-                object value = whereColumnValues[idx];
                 string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
+                object value = whereColumnValues[idx];
+                DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
-                // HACK: map CLI type to DbType
-                //parameter.DbType = DbType.String;
+                parameter.DbType = dbType;
                 parameter.Value = value;
                 command.Parameters.Add(parameter);
                 parameterNames.Add(parameterName);
             }
             
-            string sql = _SqlProvider.CreateSelectStatement(null, tableName, selectColumnNames, whereColumnNames, whereColumnOperators, parameterNames);
+            string sql = _SqlProvider.CreateSelectStatement(null, tableName,
+                                                            selectColumnNames,
+                                                            whereColumnNames,
+                                                            whereColumnOperators,
+                                                            parameterNames,
+                                                            orderByColumnNames,
+                                                            orderByColumnOrders,
+                                                            limit,
+                                                            offset);
             command.CommandText = sql;
             return command;
         }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Meebey.SmartDao
 {
-    public class MySqlProvider : AnsiSqlProvider
+    public class PostgreSqlProvider : AnsiSqlProvider
     {
         public override bool HasLimitSupport {
             get {
@@ -19,35 +19,22 @@ namespace Meebey.SmartDao
             }
         }
         
-        public MySqlProvider()
+        public PostgreSqlProvider()
         {
         }
         
-        public override string GetDataTypeName(DbType dbType)
+        // PostgreSQL handles quoted names case-sensitive, this is bad
+        public override string GetColumnName(string columnName)
         {
-            switch (dbType) {
-                case DbType.DateTime:
-                    return "DATETIME";
-            }
-            
-            return base.GetDataTypeName(dbType);
+            return columnName;
         }
         
+        // PostgreSQL handles quoted names case-sensitive, this is bad
         public override string GetTableName(string tableName)
         {
-            return String.Format("`{0}`", tableName);
+            return tableName;
         }
         
-        public override string GetColumnName (string columnName)
-        {
-            return String.Format("`{0}`", columnName);
-        }
-        
-        public override string GetParameterCharacter()
-        {
-            return "?";
-        }
-
         public override string CreateSelectStatement(string schemaName,
                                                      string tableName,
                                                      IList<string> selectColumnNames, 
@@ -76,14 +63,6 @@ namespace Meebey.SmartDao
             }
             
             return sql + limitClause.ToString();
-        }
-        
-        public override string CreateCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool?> columnIsNullables, IList<string> primaryKeys)
-        {
-            string sql = base.CreateCreateTableStatement(tableName, columnNames, columnTypes, columnLengths, columnIsNullables, primaryKeys);
-            sql = sql.Substring(sql.Length - 1);
-            sql += ",\nENGINE = InnoDB)";
-            return sql;
         }
     }
 }

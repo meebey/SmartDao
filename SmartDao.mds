@@ -1,17 +1,21 @@
 <Combine name="SmartDao" fileversion="2.0">
-  <Configurations active="Debug">
+  <Configurations active="Release">
     <Configuration name="Debug" ctype="CombineConfiguration">
       <Entry build="True" name="SmartDao" configuration="Debug" />
+      <Entry build="True" name="SmartDao.Tests" configuration="Debug" />
     </Configuration>
     <Configuration name="Release" ctype="CombineConfiguration">
       <Entry build="True" name="SmartDao" configuration="Release" />
+      <Entry build="True" name="SmartDao.Tests" configuration="Release" />
     </Configuration>
   </Configurations>
-  <StartMode startupentry="SmartDao" single="True">
+  <StartMode startupentry="SmartDao.Tests" single="True">
     <Execute type="None" entry="SmartDao" />
+    <Execute type="None" entry="SmartDao.Tests" />
   </StartMode>
   <MonoDevelop.ChangeLogAddIn.ChangeLogInfo policy="OneChangeLogInProjectRootDirectory" />
   <Entries>
     <Entry filename="SmartDao.mdp" />
+    <Entry filename="SmartDao.Tests/SmartDao.Tests.mdp" />
   </Entries>
 </Combine>

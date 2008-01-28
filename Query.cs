@@ -108,7 +108,7 @@ namespace Meebey.SmartDao
             return entry;
         }
         
-        public void SetAll(T entry)
+        public int SetAll(T entry)
         {
             if (entry == null) {
                 throw new ArgumentNullException("entry");
@@ -146,8 +146,9 @@ namespace Meebey.SmartDao
 #endif
             int res = cmd.ExecuteNonQuery();
 #if LOG4NET
-            _Logger.Debug("Set(): res: " + res);
+            _Logger.Debug("Set(): affected rows: " + res);
 #endif
+            return res;
         }
         
         public IList<T> GetAll(T template, params string[] selectColumns)
@@ -185,7 +186,15 @@ namespace Meebey.SmartDao
                 }
             }
             
-            IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName, selectColumns, columnNames, columnOperators, columnValues);
+            IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName,
+                                                                  selectColumns,
+                                                                  columnNames,
+                                                                  columnOperators,
+                                                                  columnValues,
+                                                                  null,
+                                                                  null,
+                                                                  null,
+                                                                  null);
 #if LOG4NET
             _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
 #endif

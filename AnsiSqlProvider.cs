@@ -7,8 +7,110 @@ namespace Meebey.SmartDao
 {
     public class AnsiSqlProvider : ISqlProvider
     {
+        private static IDictionary<Type, DbType> _SupportedCliTypes;
+        
+        public virtual bool HasLimitSupport {
+            get {
+                return false;
+            }
+        }
+        
+        public virtual bool HasOffsetSupport {
+            get {
+                return false;
+            }
+        }
+        
+        static AnsiSqlProvider() {
+            _SupportedCliTypes = new Dictionary<Type, DbType>(9);
+            _SupportedCliTypes.Add(typeof(String),    DbType.String);
+            _SupportedCliTypes.Add(typeof(Boolean),   DbType.Boolean);
+            _SupportedCliTypes.Add(typeof(Boolean?),  DbType.Boolean);
+            _SupportedCliTypes.Add(typeof(Int16),     DbType.Int16);
+            _SupportedCliTypes.Add(typeof(Int16?),    DbType.Int16);
+            _SupportedCliTypes.Add(typeof(Int32),     DbType.Int32);
+            _SupportedCliTypes.Add(typeof(Int32?),    DbType.Int32);
+            _SupportedCliTypes.Add(typeof(Int64),     DbType.Int64);
+            _SupportedCliTypes.Add(typeof(Int64?),    DbType.Int64);
+            _SupportedCliTypes.Add(typeof(Single),    DbType.Single);
+            _SupportedCliTypes.Add(typeof(Single?),   DbType.Single);
+            _SupportedCliTypes.Add(typeof(Double),    DbType.Double);
+            _SupportedCliTypes.Add(typeof(Double?),   DbType.Double);
+            _SupportedCliTypes.Add(typeof(Decimal),   DbType.Decimal);
+            _SupportedCliTypes.Add(typeof(Decimal?),  DbType.Decimal);
+            _SupportedCliTypes.Add(typeof(DateTime),  DbType.DateTime);
+            _SupportedCliTypes.Add(typeof(DateTime?), DbType.DateTime);
+        }
+        
         public AnsiSqlProvider()
         {
+        }
+        
+        public virtual string GetDataTypeName(DbType dbType)
+        {
+            switch (dbType) {
+                case DbType.AnsiStringFixedLength:
+                case DbType.StringFixedLength:
+                    return "CHARACTER";
+                case DbType.AnsiString:
+                case DbType.String:
+                    return "CHARACTER VARYING";
+                case DbType.Int16:
+                    return "SMALLINT";
+                case DbType.Int32:
+                    return "INTEGER";
+                case DbType.Int64:
+                    return "BIGINT";
+                case DbType.Decimal:
+                    return "NUMERIC";
+                case DbType.Boolean:
+                    return "BOOLEAN";
+                case DbType.Single:
+                    return "REAL";
+                case DbType.Double:
+                    return "DOUBLE PRECISION";
+                case DbType.DateTime:
+                    return "TIMESTAMP";
+                default:
+                    throw new NotSupportedException("DbType is not supported: " + dbType);
+            }
+        }
+                                              
+        public virtual DbType GetDBType(Type type)
+        {
+            DbType res;
+            if (!_SupportedCliTypes.TryGetValue(type, out res)) { 
+                throw new NotSupportedException("Type is not supported: " + type);
+            }
+            return res;
+        }
+        
+        public virtual string GetColumnName(string columnName)
+        {
+            return String.Format("\"{0}\"", columnName);
+        }
+        
+        public virtual string GetTableName(string tableName)
+        {
+            return String.Format("\"{0}\"", tableName);
+        }
+        
+        public virtual string GetTableName(string schemaName, string tableName)
+        {
+            if (schemaName == null) {
+                return GetTableName(tableName);
+            }
+            return String.Format("{0}.{1}", GetTableName(schemaName), GetTableName(tableName));
+        }
+        
+        public virtual string GetStatementSeparator()
+        {
+            return ";";
+        }        
+        
+        public virtual string GetParameterCharacter()
+        {
+            return "@";
         }
         
         public virtual string CreateCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool?> columnIsNullables, IList<string> primaryKeys)
@@ -50,6 +152,10 @@ namespace Meebey.SmartDao
                     throw new NotSupportedException("Value type: " + type + " must be nullable for column: " + name);
                 }
                 
+                if (!_SupportedCliTypes.ContainsKey(type)) {
+                    throw new NotSupportedException("Unsupported column data type: " + type);
+                }
+                
                 sql.AppendFormat("{0} ", GetColumnName(name));
                 if (type == typeof(string)) {
                     // TODO: CHAR support
@@ -61,29 +167,8 @@ namespace Meebey.SmartDao
                             sql.AppendFormat("({0})", length);
                         }
                     }
-                } else if (type == typeof(Boolean) ||
-                           type == typeof(Boolean?)) {
-                    sql.Append(GetDataTypeName(DbType.Boolean));
-                } else if (type == typeof(Int32) ||
-                           type == typeof(Int32?)) {
-                    sql.Append(GetDataTypeName(DbType.Int32));
-                } else if (type == typeof(Int64) ||
-                           type == typeof(Int64?)) {
-                    sql.Append(GetDataTypeName(DbType.Int64));
-                } else if (type == typeof(Decimal) ||
-                           type == typeof(Decimal?)) {
-                    sql.Append(GetDataTypeName(DbType.Decimal));
-                } else if (type == typeof(Single) ||
-                           type == typeof(Single?)) {
-                    sql.Append(GetDataTypeName(DbType.Single));
-                } else if (type == typeof(Double) ||
-                           type == typeof(Double?)) {
-                    sql.Append(GetDataTypeName(DbType.Double));
-                } else if (type == typeof(DateTime) ||
-                           type == typeof(DateTime?)) {
-                    sql.Append(GetDataTypeName(DbType.DateTime));
                 } else {
-                    throw new NotSupportedException("Unsupported column data type: " + type);
+                    sql.Append(GetDataTypeName(GetDBType(type)));
                 }
                 
                 if (!isNullable) {
@@ -201,7 +286,11 @@ namespace Meebey.SmartDao
                                                     IList<string> selectColumnNames,
                                                     IList<string> whereColumnNames,
                                                     IList<string> whereColumnOperators,
-                                                    IList<string> whereColumnValues)
+                                                    IList<string> whereColumnValues,
+                                                    IList<string> orderByColumnNames,
+                                                    IList<string> orderByColumnDirection,
+                                                    int? limit,
+                                                    int? offset)
         {
             if (whereColumnNames == null) {
                 throw new ArgumentNullException("whereColumnNames");
@@ -234,7 +323,14 @@ namespace Meebey.SmartDao
                                          whereClause != null ? whereClause.ToString() : null);
         }
         
-        public virtual string CreateSelectStatement(string schemaName, string tableName, IList<string> selectColumnNames, string whereClause)
+        public virtual string CreateSelectStatement(string schemaName,
+                                                    string tableName,
+                                                    IList<string> selectColumnNames, 
+                                                    string whereClause,
+                                                    IList<string> orderByColumnNames,
+                                                    IList<string> orderByColumnDirections,
+                                                    int? limit,
+                                                    int? offset)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -249,7 +345,13 @@ namespace Meebey.SmartDao
             
             StringBuilder sql = new StringBuilder("SELECT ");
             for (int idx = 0; idx < selectColumnNames.Count; idx++) {
-                sql.AppendFormat("{0}, ", GetColumnName(selectColumnNames[idx]));
+                string name = selectColumnNames[idx];
+                if (name == "*" || name.EndsWith(")")) {
+                    // don't quote "*" or function calls
+                    sql.AppendFormat("{0}, ", name);
+                } else {
+                    sql.AppendFormat("{0}, ", GetColumnName(name));
+                }
             }
             sql.Remove(sql.Length - 2, 2);
             
@@ -259,8 +361,38 @@ namespace Meebey.SmartDao
             if (whereClause != null && whereClause.Length != 0) {
                 sql.AppendFormat(" WHERE {0}", whereClause);
             }
+
+            if (orderByColumnNames != null && orderByColumnNames.Count != 0) {
+                if (orderByColumnDirections == null) {
+                    throw new ArgumentException("orderByColumnDirection must not be null if orderByColumnNames is not null.");
+                }
+                if (orderByColumnNames.Count != orderByColumnDirections.Count) {
+                    throw new ArgumentException("orderByColumnNames and orderByColumnDirection must have the same size.");
+                }
+                
+                sql.Append(" ORDER BY ");
+                for (int idx = 0; idx < orderByColumnNames.Count; idx++) {
+                    string direction = orderByColumnDirections[idx];
+                    sql.Append(GetColumnName(orderByColumnNames[idx]));
+                    if (direction != null) {
+                        sql.AppendFormat(" {0}", direction);
+                    }
+                    sql.Append(", ");
+                }
+                sql.Remove(sql.Length - 2, 2);
+            }
             
+            // LIMIT is not part of ANSI-SQL, thus can't be handled here
             return sql.ToString();
+        }
+        
+        public virtual string CreateSelectStatement(string schemaName,
+                                                    string tableName,
+                                                    IList<string> selectColumnNames, 
+                                                    string whereClause)
+        {
+            return CreateSelectStatement(schemaName, tableName, selectColumnNames,
+                                         whereClause, null, null, null, null);
         }
         
         public virtual string CreateUpdateStatement(string tableName,
@@ -329,7 +461,7 @@ namespace Meebey.SmartDao
             if (whereClause != null && whereClause.Length != 0) {
                 sql.AppendFormat(" WHERE {0}", whereClause);
             }
-            
+
             return sql.ToString();
         }
         
@@ -348,64 +480,6 @@ namespace Meebey.SmartDao
             return sql.ToString();
         }
     
-        public virtual string GetDataTypeName(DbType dbType)
-        {
-            switch (dbType) {
-                case DbType.AnsiStringFixedLength:
-                case DbType.StringFixedLength:
-                    return "CHARACTER";
-                case DbType.AnsiString:
-                case DbType.String:
-                    return "CHARACTER VARYING";
-                case DbType.Int16:
-                    return "SMALLINT";
-                case DbType.Int32:
-                    return "INTEGER";
-                case DbType.Int64:
-                    return "BIGINT";
-                case DbType.Decimal:
-                    return "NUMERIC";
-                case DbType.Boolean:
-                    return "BOOLEAN";
-                case DbType.Single:
-                    return "REAL";
-                case DbType.Double:
-                    return "DOUBLE PRECISION";
-                case DbType.DateTime:
-                    return "TIMESTAMP";
-                default:
-                    throw new NotSupportedException("DbType is not supported: " + dbType);
-            }
-        }
-                                              
-        public virtual string GetColumnName(string columnName)
-        {
-            return columnName;
-        }
-        
-        public virtual string GetTableName(string tableName)
-        {
-            return tableName;
-        }
-        
-        public virtual string GetTableName(string schemaName, string tableName)
-        {
-            if (schemaName == null) {
-                return GetTableName(tableName);
-            }
-            return String.Format("{0}.{1}", GetTableName(schemaName), GetTableName(tableName));
-        }
-        
-        public virtual string GetStatementSeparator()
-        {
-            return ";";
-        }        
-        
-        public virtual string GetParameterCharacter()
-        {
-            return "@";
-        }
-        
         private static bool IsNullableType(Type type)
         {
             if (type == null) {

@@ -6,6 +6,21 @@ namespace Meebey.SmartDao
 {
     public interface ISqlProvider
     {
+        bool HasLimitSupport {
+            get;
+        }
+        bool HasOffsetSupport {
+            get;
+        }
+
+        string GetDataTypeName(DbType dbType);
+        DbType GetDBType(Type type);
+        string GetColumnName(string columnName);
+        string GetTableName(string tableName);
+        string GetTableName(string shemaName, string tableName);
+        string GetStatementSeparator();
+        string GetParameterCharacter();
+
         string CreateTableExistsStatement(string tableName);
         string CreateCreateTableStatement(string tableName,
                                           IList<string> columnNames,
@@ -20,12 +35,20 @@ namespace Meebey.SmartDao
                                      IList<string> columnValues);
         string CreateSelectStatement(string schemaName, string tableName,
                                      IList<string> selectColumnNames,
-                                     string whereClause);
+                                     string whereClause,
+                                     IList<string> orderByColumnNames,
+                                     IList<string> orderByColumnOrders,
+                                     int? limit,
+                                     int? offset);
         string CreateSelectStatement(string schemaName, string tableName,
                                      IList<string> selectColumnNames,
                                      IList<string> whereColumnNames,
                                      IList<string> whereColumnOperators,
-                                     IList<string> whereColumnValues);
+                                     IList<string> whereColumnValues,
+                                     IList<string> orderByColumnNames,
+                                     IList<string> orderByColumnOrders,
+                                     int? limit,
+                                     int? offset);
         string CreateUpdateStatement(string tableName,
                                      IList<string> setColumnNames,
                                      IList<string> setColumnValues,
@@ -37,11 +60,5 @@ namespace Meebey.SmartDao
                                      IList<string> whereColumnOperators,
                                      IList<string> whereColumnValues);
         string CreateDeleteStatement(string tableName, string whereClause);
-        string GetDataTypeName(DbType dbType);
-        string GetColumnName(string columnName);
-        string GetTableName(string tableName);
-        string GetTableName(string shemaName, string tableName);
-        string GetStatementSeparator();
-        string GetParameterCharacter();
     }
 }
