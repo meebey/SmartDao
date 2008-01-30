@@ -142,7 +142,7 @@ namespace Meebey.SmartDao
                 
                 object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
                 if (pkAttrs != null && pkAttrs.Length > 0) {
-                    primaryKeyColumns.Add(columnAttr.Name);
+                    primaryKeyColumns.Add(columnName);
                 }
             }
             if (columnNames.Count == 0) {
