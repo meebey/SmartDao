@@ -47,16 +47,19 @@ namespace Meebey.SmartDao
                 _Length = value;
             }
         }
-        
-        public bool? IsNullable {
+
+        // TODO: use enum
+        /*
+        public bool IsNullable {
             get {
-                return _IsNullable;
+                return _IsNullable == null ? false : (bool) _IsNullable;
             }
             set {
                 _IsNullable = value;
             }
         }
-
+        */
+        
         public Type Type {
             get {
                 return _Type;

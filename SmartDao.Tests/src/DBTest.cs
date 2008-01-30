@@ -112,6 +112,16 @@ namespace Meebey.SmartDao.Tests
             }
         }
 
+        [Column(Name = "datetime_column_notnullable" /*, IsNullable = false*/)]
+        public DateTime? DateTimeColumnNullable {
+            get {
+                return _DateTimeColumn;
+            }
+            set {
+                _DateTimeColumn = value;
+            }
+        }
+        
         public DBTest()
         {
         }
