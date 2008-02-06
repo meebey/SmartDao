@@ -11,10 +11,12 @@ namespace Meebey.SmartDao.Tests
         private string    _StringColumnNonFixed;
         private Int32?    _Int32Column;
         private Int32?    _Int32ColumnFixed;
+        private Boolean?  _BooleanColumn;
         private Decimal?  _DecimalColumnFixed;
         private Single?   _SingleColumn;
         private Double?   _DoubleColumn;
         private DateTime? _DateTimeColumn;
+        private DateTime? _DateTimeColumnNullable;
         
         [PrimaryKey]
         [Column(Name = "pk_int32")]
@@ -115,10 +117,20 @@ namespace Meebey.SmartDao.Tests
         [Column(Name = "datetime_column_notnullable" /*, IsNullable = false*/)]
         public DateTime? DateTimeColumnNullable {
             get {
-                return _DateTimeColumn;
+                return _DateTimeColumnNullable;
             }
             set {
-                _DateTimeColumn = value;
+                _DateTimeColumnNullable = value;
+            }
+        }
+
+        [Column(Name = "boolean_column")]
+        public Boolean? BooleanColumn {
+            get {
+                return _BooleanColumn;
+            }
+            set {
+                _BooleanColumn = value;
             }
         }
         

@@ -21,9 +21,17 @@ namespace Meebey.SmartDao.Tests
             /*
             con = new NpgsqlConnection("Server=localhost;" + 
                                        "Database=test;" +
-                                       "User ID=postgres;");
+                                       "User ID=test;" +
+                                       "Password=test");
             provider = new PostgreSqlProvider();
             */
+            
+            con = new NpgsqlConnection("Server=localhost;" +
+                                       "Port=5433;" +
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test");
+            provider = new PostgreSqlProvider();
             
             /*
             con = new MySqlConnection("Server=localhost;" + 
@@ -54,11 +62,13 @@ namespace Meebey.SmartDao.Tests
             provider = new MicrosoftSqlProvider();
             */
             
+            /*
             con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
             provider = new PostgreSqlProvider();
+            */
             
             /*
             con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
@@ -131,7 +141,7 @@ namespace Meebey.SmartDao.Tests
             stop = DateTime.UtcNow;
             double queryAvg = (stop - start).TotalMilliseconds / count;
             
-            Console.WriteLine("--- INSERT (" + count + " ---");
+            Console.WriteLine("--- INSERT (" + count + ") ---");
             Console.WriteLine("raw SQL INSERTs avg: " + sqlAvg + " ms/query");
             Console.WriteLine("query.Add() avg: " + queryAvg  + " ms/query");
             
@@ -181,7 +191,16 @@ namespace Meebey.SmartDao.Tests
         private static void TestLowLevel(IDbConnection con, int count)
         {
             for (int i = 0; i < count; i++) {
-                string sql = String.Format("INSERT INTO test_table (pk_int32, int32_column_fixed, double_column, string_column, decimal_column, datetime_column, int32_column, single_column) VALUES ({0}, 0, 0, 'abc', 0, '{1}', 0, 0)", i, DateTime.UtcNow.ToString("s"));
+                string sql = String.Format("INSERT INTO test_table " +
+                                           "(pk_int32, int32_column_fixed, " +
+                                           " double_column, string_column, " +
+                                           " decimal_column, datetime_column, " +
+                                           " int32_column, single_column, " +
+                                           " boolean_column) " +
+                                           "VALUES ("+
+                                           " {0}, 0, {1}, 'abc', 0, '{2}', 0, 0, " + 
+                                           " 'TRUE')",
+                                           i, i, DateTime.UtcNow.ToString("s"));
                 IDbCommand com = con.CreateCommand();
                 com.CommandText = sql;
                 com.ExecuteNonQuery();
@@ -194,8 +213,10 @@ namespace Meebey.SmartDao.Tests
             for (int i = 0; i < count; i++) {
                 DBTest test = new DBTest();
                 test.PKInt32 = i;
-                test.DateTimeColumn = DateTime.UtcNow;
                 test.StringColumn = "abc";
+                test.DateTimeColumn = DateTime.UtcNow;
+                test.BooleanColumn = true;
+                test.DoubleColumn = i;
                 query.Add(test);
             }
         }
