@@ -159,16 +159,26 @@ namespace Meebey.SmartDao
         
         public IList<T> GetAll(T template, params string[] selectColumns)
         {
-            if (selectColumns == null) {
-                throw new ArgumentNullException("selectColumns");
+            GetOptions options = new GetOptions();
+            options.SelectFields = selectColumns;
+            return GetAll(template, options);
+        }
+        
+        public IList<T> GetAll(T template, GetOptions options)
+        {
+            if (options == null) {
+                throw new ArgumentNullException("options");
             }
             
             InitFields();
 
-            List<string> columnNames     = new List<string>(_ColumnToProperties.Count);
-            List<string> columnOperators = new List<string>(_ColumnToProperties.Count);
-            List<object> columnValues    = new List<object>(_ColumnToProperties.Count);
+            List<string> whereColumnNames = null;
+            List<string> whereColumnOperators = null;
+            List<object> whereColumnValues = null;
             if (template != null) {
+                whereColumnNames     = new List<string>(_ColumnToProperties.Count);
+                whereColumnOperators = new List<string>(_ColumnToProperties.Count);
+                whereColumnValues    = new List<object>(_ColumnToProperties.Count);
                 foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
                     string columnName = kv.Key;
                     PropertyInfo property = kv.Value;
@@ -186,21 +196,44 @@ namespace Meebey.SmartDao
                         }
                     }
                     
-                    columnNames.Add(columnName);
-                    columnOperators.Add(@operator);
-                    columnValues.Add(value);
+                    whereColumnNames.Add(columnName);
+                    whereColumnOperators.Add(@operator);
+                    whereColumnValues.Add(value);
                 }
             }
             
+            IList<string> orderByColumns = null;
+            IList<string> orderByDirections = null;
+            if (options.OrderBy != null) {
+                orderByColumns    = new List<string>(options.OrderBy.Count);
+                orderByDirections = new List<string>(options.OrderBy.Count);
+                foreach (KeyValuePair<string, OrderByDirection> entry in options.OrderBy) {
+                    orderByColumns.Add(entry.Key);
+                    string direction;
+                    switch (entry.Value) {
+                        case OrderByDirection.Ascending:
+                            direction = "ASC";
+                            break;
+                        case OrderByDirection.Descending:
+                            direction = "DESC";
+                            break;
+                        default:
+                            throw new NotSupportedException("Unsupported OrderByDirection value: " + entry.Value);
+                    }
+                    orderByDirections.Add(direction);
+                }
+            }
+            
+            // TODO: emulate LIMIT and OFFSET support if the RDBMS doesn't support it!
             IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName,
-                                                                  selectColumns,
-                                                                  columnNames,
-                                                                  columnOperators,
-                                                                  columnValues,
-                                                                  null,
-                                                                  null,
-                                                                  null,
-                                                                  null);
+                                                                  options.SelectFields,
+                                                                  whereColumnNames,
+                                                                  whereColumnOperators,
+                                                                  whereColumnValues,
+                                                                  orderByColumns,
+                                                                  orderByDirections,
+                                                                  options.Limit,
+                                                                  options.Offset);
 #if LOG4NET
             _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
 #endif

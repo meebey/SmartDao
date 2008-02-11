@@ -344,32 +344,24 @@ namespace Meebey.SmartDao
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
             }
-            if (selectColumnNames == null) {
-                throw new ArgumentNullException("selectColumnNames");
-            }
-            if (whereColumnNames == null) {
-                throw new ArgumentNullException("whereColumnNames");
-            }
-            if (whereColumnOperators == null) {
-                throw new ArgumentNullException("whereColumnOperators");
-            }
-            if (whereColumnValues == null) {
-                throw new ArgumentNullException("whereColumnValues");
-            }
             
             IDbCommand command = _DBConnection.CreateCommand();
-            List<string> parameterNames = new List<string>();
-            for (int idx = 0; idx < whereColumnNames.Count; idx++) {
-                string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
-                object value = whereColumnValues[idx];
-                DbType dbType = _SqlProvider.GetDBType(value.GetType());
-                
-                IDbDataParameter parameter = command.CreateParameter();
-                parameter.ParameterName = parameterName;
-                parameter.DbType = dbType;
-                parameter.Value = value;
-                command.Parameters.Add(parameter);
-                parameterNames.Add(parameterName);
+            
+            List<string> parameterNames = null;
+            if (whereColumnNames != null) {
+                parameterNames = new List<string>(whereColumnNames.Count);
+                for (int idx = 0; idx < whereColumnNames.Count; idx++) {
+                    string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
+                    object value = whereColumnValues[idx];
+                    DbType dbType = _SqlProvider.GetDBType(value.GetType());
+                    
+                    IDbDataParameter parameter = command.CreateParameter();
+                    parameter.ParameterName = parameterName;
+                    parameter.DbType = dbType;
+                    parameter.Value = value;
+                    command.Parameters.Add(parameter);
+                    parameterNames.Add(parameterName);
+                }
             }
             
             string sql = _SqlProvider.CreateSelectStatement(null, tableName,

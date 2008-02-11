@@ -259,7 +259,8 @@ namespace Meebey.SmartDao
         {
             return CreateSelectStatement("INFORMATION_SCHEMA", "TABLES",
                                          new string[] {"COUNT(*)"},
-                                         String.Format("TABLE_NAME = '{0}'", tableName));
+                                         String.Format("TABLE_NAME = '{0}'", tableName),
+                                         null, null, null, null);
         }
         
         /*
@@ -292,23 +293,17 @@ namespace Meebey.SmartDao
                                                     int? limit,
                                                     int? offset)
         {
-            if (whereColumnNames == null) {
-                throw new ArgumentNullException("whereColumnNames");
-            }
-            if (whereColumnOperators == null) {
-                throw new ArgumentNullException("whereColumnOperators");
-            }
-            if (whereColumnValues == null) {
-                throw new ArgumentNullException("whereColumnValues");
-            }
-
-            if (!(whereColumnNames.Count == whereColumnOperators.Count &&
-                  whereColumnOperators.Count == whereColumnValues.Count)) {
-                throw new ArgumentException("columnNames, columnOperators and columnValues must have the same size.");
+            if (whereColumnNames != null &&
+                whereColumnOperators != null &&
+                whereColumnValues != null) {
+                if (!(whereColumnNames.Count == whereColumnOperators.Count &&
+                      whereColumnOperators.Count == whereColumnValues.Count)) {
+                    throw new ArgumentException("columnNames, columnOperators and columnValues must have the same size.");
+                }
             }
             
             StringBuilder whereClause = null;
-            if (whereColumnNames.Count > 0) {
+            if (whereColumnNames != null && whereColumnNames.Count > 0) {
                 whereClause = new StringBuilder();
                 for (int idx = 0; idx < whereColumnNames.Count; idx++) {
                     whereClause.AppendFormat("{0} {1} {2}, ",
@@ -320,7 +315,11 @@ namespace Meebey.SmartDao
             }
             return CreateSelectStatement(schemaName, tableName,
                                          selectColumnNames,
-                                         whereClause != null ? whereClause.ToString() : null);
+                                         whereClause != null ? whereClause.ToString() : null,
+                                         orderByColumnNames,
+                                         orderByColumnDirection,
+                                         limit,
+                                         offset);
         }
         
         public virtual string CreateSelectStatement(string schemaName,
@@ -335,34 +334,31 @@ namespace Meebey.SmartDao
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
             }
-            if (selectColumnNames == null) {
-                throw new ArgumentNullException("selectColumnNames");
-            }
-            
-            if (selectColumnNames.Count == 0) {
-                throw new ArgumentException("selectColumnNames must not be empty.");
-            }
             
             StringBuilder sql = new StringBuilder("SELECT ");
-            for (int idx = 0; idx < selectColumnNames.Count; idx++) {
-                string name = selectColumnNames[idx];
-                if (name == "*" || name.EndsWith(")")) {
-                    // don't quote "*" or function calls
-                    sql.AppendFormat("{0}, ", name);
-                } else {
-                    sql.AppendFormat("{0}, ", GetColumnName(name));
+            if (selectColumnNames != null && selectColumnNames.Count > 0) {
+                for (int idx = 0; idx < selectColumnNames.Count; idx++) {
+                    string name = selectColumnNames[idx];
+                    if (name == "*" || name.EndsWith(")")) {
+                        // don't quote "*" or function calls
+                        sql.AppendFormat("{0}, ", name);
+                    } else {
+                        sql.AppendFormat("{0}, ", GetColumnName(name));
+                    }
                 }
+                sql.Remove(sql.Length - 2, 2);
+            } else {
+                sql.Append("*");
             }
-            sql.Remove(sql.Length - 2, 2);
             
             sql.Append(" FROM ");
             sql.Append(GetTableName(schemaName, tableName));
             
-            if (whereClause != null && whereClause.Length != 0) {
+            if (whereClause != null && whereClause.Length > 0) {
                 sql.AppendFormat(" WHERE {0}", whereClause);
             }
-
-            if (orderByColumnNames != null && orderByColumnNames.Count != 0) {
+            
+            if (orderByColumnNames != null && orderByColumnNames.Count > 0) {
                 if (orderByColumnDirections == null) {
                     throw new ArgumentException("orderByColumnDirection must not be null if orderByColumnNames is not null.");
                 }
@@ -384,15 +380,6 @@ namespace Meebey.SmartDao
             
             // LIMIT is not part of ANSI-SQL, thus can't be handled here
             return sql.ToString();
-        }
-        
-        public virtual string CreateSelectStatement(string schemaName,
-                                                    string tableName,
-                                                    IList<string> selectColumnNames, 
-                                                    string whereClause)
-        {
-            return CreateSelectStatement(schemaName, tableName, selectColumnNames,
-                                         whereClause, null, null, null, null);
         }
         
         public virtual string CreateUpdateStatement(string tableName,
@@ -437,7 +424,7 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("tableName");
             }
             if (setColumnNames == null) {
-                throw new ArgumentNullException("selectColumnNames");
+                throw new ArgumentNullException("setColumnNames");
             }
             if (setColumnValues == null) {
                 throw new ArgumentNullException("setColumnValues");

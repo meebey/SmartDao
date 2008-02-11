@@ -1,5 +1,5 @@
 <Project name="SmartDao" fileversion="2.0" DefaultNamespace="Meebey.SmartDao" language="C#" clr-version="Net_2_0" ctype="DotNetProject">
-  <Configurations active="Release">
+  <Configurations active="Debug">
     <Configuration name="Debug" ctype="DotNetProjectConfiguration">
       <Output directory="../bin/debug" assemblyKeyFile="." assembly="Meebey.SmartDao" />
       <Build debugmode="True" target="Library" />
@@ -20,7 +20,7 @@
     <File name="src/ColumnAttribute.cs" subtype="Code" buildaction="Compile" />
     <File name="src/DatabaseManager.cs" subtype="Code" buildaction="Compile" />
     <File name="src/ForeignKeyAttribute.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/GetCommand.cs" subtype="Code" buildaction="Compile" />
+    <File name="src/GetOptions.cs" subtype="Code" buildaction="Compile" />
     <File name="src/IndexAttribute.cs" subtype="Code" buildaction="Compile" />
     <File name="src/ISqlProvider.cs" subtype="Code" buildaction="Compile" />
     <File name="src/MicrosoftSqlProvider.cs" subtype="Code" buildaction="Compile" />
@@ -31,6 +31,7 @@
     <File name="src/SqliteProvider.cs" subtype="Code" buildaction="Compile" />
     <File name="src/TableAttribute.cs" subtype="Code" buildaction="Compile" />
     <File name="src/UniqueAttribute.cs" subtype="Code" buildaction="Compile" />
+    <File name="src/OrderByDirection.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />

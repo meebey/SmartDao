@@ -26,12 +26,14 @@ namespace Meebey.SmartDao.Tests
             provider = new PostgreSqlProvider();
             */
             
+            /*
             con = new NpgsqlConnection("Server=localhost;" +
                                        "Port=5433;" +
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test");
             provider = new PostgreSqlProvider();
+            */
             
             /*
             con = new MySqlConnection("Server=localhost;" + 
@@ -62,13 +64,11 @@ namespace Meebey.SmartDao.Tests
             provider = new MicrosoftSqlProvider();
             */
             
-            /*
             con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
             provider = new PostgreSqlProvider();
-            */
             
             /*
             con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
@@ -163,6 +163,31 @@ namespace Meebey.SmartDao.Tests
             tests = query.GetAll(template, "pk_int32");
             stop = DateTime.UtcNow;
             Console.WriteLine("--- SELECT pk_int32 WHERE pk_int32 = 1 ---");
+            Console.WriteLine("query.GetAll() rows: " + tests.Count);
+            Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            
+            int limit = count / 4;
+            int offset = count / 2;
+            GetOptions options;
+            
+            start = DateTime.UtcNow;
+            options = new GetOptions();
+            options.SelectFields = new string[] { "pk_int32" };
+            options.Limit = limit;
+            tests = query.GetAll(null, options);
+            stop = DateTime.UtcNow;
+            Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " ---");
+            Console.WriteLine("query.GetAll() rows: " + tests.Count);
+            Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            
+            start = DateTime.UtcNow;
+            options = new GetOptions();
+            options.SelectFields = new string[] { "pk_int32" };
+            options.Limit = limit;
+            options.Offset = offset;
+            tests = query.GetAll(null, options);
+            stop = DateTime.UtcNow;
+            Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " OFFSET " + offset + " ---");
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
