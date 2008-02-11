@@ -9,7 +9,7 @@ namespace Meebey.SmartDao
         private string   _Default;
         private string[] _OldNames;
         private int      _Length;
-        private bool?    _IsNullable;
+        private bool     _IsNullable = true;
         private Type     _Type;
         
         public string Name {
@@ -48,17 +48,14 @@ namespace Meebey.SmartDao
             }
         }
 
-        // TODO: use enum
-        /*
         public bool IsNullable {
             get {
-                return _IsNullable == null ? false : (bool) _IsNullable;
+                return _IsNullable;
             }
             set {
                 _IsNullable = value;
             }
         }
-        */
         
         public Type Type {
             get {

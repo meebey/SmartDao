@@ -33,6 +33,10 @@ namespace Meebey.SmartDao
                 return;
             }
             
+#if LOG4NET
+            DateTime start, stop;
+            start = DateTime.UtcNow;
+#endif
             object[] tableAttrs = _TableType.GetCustomAttributes(typeof(TableAttribute), true);
             if (tableAttrs == null || tableAttrs.Length == 0) {
                 throw new ArgumentException("T", "Type does not contain a TableAttribute.");
@@ -74,6 +78,10 @@ namespace Meebey.SmartDao
             if (!foundColumn) {
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "_TableType");
             }
+#if LOG4NET
+            stop = DateTime.UtcNow;
+            _Logger.Debug("InitFields(): took: " + (stop - start).TotalMilliseconds + " ms");
+#endif
         }
         
         public IList<T> Add(IList<T> entry)
@@ -107,9 +115,14 @@ namespace Meebey.SmartDao
             IDbCommand cmd = _DatabaseManager.CreateInsertCommand(_TableName, columnNames, columnValues);
 #if LOG4NET
             _Logger.Debug("Add(): SQL: " + cmd.CommandText);
+            DateTime start, stop;
+            start = DateTime.UtcNow;
 #endif
             cmd.ExecuteNonQuery();
-            
+#if LOG4NET
+            stop = DateTime.UtcNow;
+            _Logger.Debug("Add(): query took: " + (stop - start).TotalMilliseconds + " ms");
+#endif
             // TODO: copy pk into a fresh object
             return entry;
         }
@@ -148,11 +161,15 @@ namespace Meebey.SmartDao
             
             IDbCommand cmd = _DatabaseManager.CreateUpdateCommand(_TableName, setColumnNames, setColumnValues, whereColumnNames, whereColumnOperators, whereColumnValues);
 #if LOG4NET
-            _Logger.Debug("Set(): SQL: " + cmd.CommandText);
+            _Logger.Debug("SetAll(): SQL: " + cmd.CommandText);
+            DateTime start, stop;
+            start = DateTime.UtcNow;
 #endif
             int res = cmd.ExecuteNonQuery();
 #if LOG4NET
-            _Logger.Debug("Set(): affected rows: " + res);
+            _Logger.Debug("SetAll(): affected rows: " + res);
+            stop = DateTime.UtcNow;
+            _Logger.Debug("SetAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
 #endif
             return res;
         }
@@ -236,8 +253,14 @@ namespace Meebey.SmartDao
                                                                   options.Offset);
 #if LOG4NET
             _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
+            DateTime start, stop;
+            start = DateTime.UtcNow;
 #endif
             using (IDataReader reader = cmd.ExecuteReader()) {
+#if LOG4NET
+                stop = DateTime.UtcNow;
+                _Logger.Debug("GetAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
+#endif
                 List<T> rows = new List<T>();
                 while (reader.Read()) {
                     T row = new T();

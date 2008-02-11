@@ -16,7 +16,7 @@ namespace Meebey.SmartDao.Tests
         private Single?   _SingleColumn;
         private Double?   _DoubleColumn;
         private DateTime? _DateTimeColumn;
-        private DateTime? _DateTimeColumnNullable;
+        private DateTime? _DateTimeColumnNotNullable;
         
         [PrimaryKey]
         [Column(Name = "pk_int32")]
@@ -114,13 +114,13 @@ namespace Meebey.SmartDao.Tests
             }
         }
 
-        [Column(Name = "datetime_column_notnullable" /*, IsNullable = false*/)]
-        public DateTime? DateTimeColumnNullable {
+        [Column(Name = "datetime_column_notnullable", IsNullable = false)]
+        public DateTime? DateTimeColumnNotNullable {
             get {
-                return _DateTimeColumnNullable;
+                return _DateTimeColumnNotNullable;
             }
             set {
-                _DateTimeColumnNullable = value;
+                _DateTimeColumnNotNullable = value;
             }
         }
 

@@ -138,8 +138,7 @@ namespace Meebey.SmartDao
                 columnNames.Add(columnName);
                 columnTypes.Add(property.PropertyType);
                 columnLengths.Add(columnAttr.Length);
-                //columnIsNullables.Add(columnAttr.IsNullable);
-                columnIsNullables.Add(null);
+                columnIsNullables.Add(columnAttr.IsNullable);
                 
                 object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
                 if (pkAttrs != null && pkAttrs.Length > 0) {

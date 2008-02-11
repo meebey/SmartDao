@@ -1,3 +1,10 @@
+2008-02-11  Mirco Bauer <meebey@meebey.net> 
+
+	* src/Main.cs: Fixed timing code.
+	
+	  Added NOT NULL test code.
+	* src/DBTest.cs: One column is now NOT NULL for tests.
+
 2008-02-07  Mirco Bauer <meebey@meebey.net> 
 
 	* src/Main.cs, src/DBTest.cs, SmartDao.Tests.mdp: - added bool and double

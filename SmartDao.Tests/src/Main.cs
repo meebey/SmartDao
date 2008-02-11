@@ -81,24 +81,24 @@ namespace Meebey.SmartDao.Tests
             
             Console.WriteLine("--- " + con + " ---");
             Console.WriteLine("--- " + provider + " ---");
-            int count = 1000;
+            int count = 10000;
             DateTime start, stop;
 
             // WARMUP
             con.Open();
             con.Close();
             
+            Console.WriteLine("--- CONNECT ---");
             start = DateTime.UtcNow;
             con.Open();
             stop = DateTime.UtcNow;
-            Console.WriteLine("--- CONNECT ---");
-            Console.WriteLine("IDbConnect.Open(): took: " + (stop - start).Milliseconds + " ms");
+            Console.WriteLine("IDbConnect.Open(): took: " + (stop - start).TotalMilliseconds + " ms");
             
+            Console.WriteLine("--- DISCONNECT ---");
             start = DateTime.UtcNow;
             con.Close();
             stop = DateTime.UtcNow;
-            Console.WriteLine("--- DISCONNECT ---");
-            Console.WriteLine("IDbConnect.Close(): took: " + (stop - start).Milliseconds + " ms");
+            Console.WriteLine("IDbConnect.Close(): took: " + (stop - start).TotalMilliseconds + " ms");
             
             con.Open();
             DatabaseManager dbMan = new DatabaseManager(con, provider);
@@ -136,12 +136,12 @@ namespace Meebey.SmartDao.Tests
             Thread.Sleep(5000);
             
             // SHOWTIME
+            Console.WriteLine("--- INSERT (" + count + ") ---");
             start = DateTime.UtcNow;
             TestHighLevel(dbMan, count);
             stop = DateTime.UtcNow;
             double queryAvg = (stop - start).TotalMilliseconds / count;
             
-            Console.WriteLine("--- INSERT (" + count + ") ---");
             Console.WriteLine("raw SQL INSERTs avg: " + sqlAvg + " ms/query");
             Console.WriteLine("query.Add() avg: " + queryAvg  + " ms/query");
             
@@ -149,20 +149,20 @@ namespace Meebey.SmartDao.Tests
             // warm up
             IList<DBTest> tests = query.GetAll(null, "pk_int32");
             
+            Console.WriteLine("--- SELECT * ---");
             start = DateTime.UtcNow;
             tests = query.GetAll(null, "*");
             stop = DateTime.UtcNow;
-            Console.WriteLine("--- SELECT * ---");
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
             
+            Console.WriteLine("--- SELECT pk_int32 WHERE pk_int32 = 1 ---");
             start = DateTime.UtcNow;
             DBTest template = new DBTest();
             template.PKInt32 = 1;
             tests = query.GetAll(template, "pk_int32");
             stop = DateTime.UtcNow;
-            Console.WriteLine("--- SELECT pk_int32 WHERE pk_int32 = 1 ---");
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
@@ -170,16 +170,17 @@ namespace Meebey.SmartDao.Tests
             int offset = count / 2;
             GetOptions options;
             
+            Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " ---");
             start = DateTime.UtcNow;
             options = new GetOptions();
             options.SelectFields = new string[] { "pk_int32" };
             options.Limit = limit;
             tests = query.GetAll(null, options);
             stop = DateTime.UtcNow;
-            Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " ---");
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
+            Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " OFFSET " + offset + " ---");
             start = DateTime.UtcNow;
             options = new GetOptions();
             options.SelectFields = new string[] { "pk_int32" };
@@ -187,45 +188,38 @@ namespace Meebey.SmartDao.Tests
             options.Offset = offset;
             tests = query.GetAll(null, options);
             stop = DateTime.UtcNow;
-            Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " OFFSET " + offset + " ---");
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
+            Console.WriteLine("--- UPDATE string_column WHERE pk_int32 = 1 ---");
             start = DateTime.UtcNow;
             template = new DBTest();
             template.PKInt32 = 1;
             template.StringColumn = "foobar";
             int rows = query.SetAll(template);
             stop = DateTime.UtcNow;
-            Console.WriteLine("--- UPDATE string_column WHERE pk_int32 = 1 ---");
             Console.WriteLine("query.SetAll() rows: " + rows);
             Console.WriteLine("query.SetAll() took: " + (stop - start).TotalMilliseconds + " ms");
 
             con.Close();
             con.Dispose();
-            
-            /*
-            for (int i = 0; i < 3; i++) {
-                SortedDictionary<Attribute, string> sdict = new SortedDictionary<Attribute,string>();
-                sdict.Add(new SerializableAttribute(), "foo");
-                sdict.Add(new SerializableAttribute(), "bar");
-            }
-            */
         }
         
         private static void TestLowLevel(IDbConnection con, int count)
         {
             for (int i = 0; i < count; i++) {
+                string now = DateTime.UtcNow.ToString("s");
                 string sql = String.Format("INSERT INTO test_table " +
                                            "(pk_int32, int32_column_fixed, " +
                                            " double_column, string_column, " +
                                            " decimal_column, datetime_column, " +
+                                           " datetime_column_notnullable, " +
                                            " int32_column, single_column, " +
                                            " boolean_column) " +
                                            "VALUES ("+
-                                           " {0}, 0, {1}, 'abc', 0, '{2}', 0, 0, " + 
-                                           " 'TRUE')",
-                                           i, i, DateTime.UtcNow.ToString("s"));
+                                           " {0}, 0, {1}, 'abc', 0, '{2}', "+
+                                           " '{3}', 0, 0, 'TRUE')",
+                                           i, i, now, now);
                 IDbCommand com = con.CreateCommand();
                 com.CommandText = sql;
                 com.ExecuteNonQuery();
@@ -236,10 +230,12 @@ namespace Meebey.SmartDao.Tests
         {
             Query<DBTest> query = new Query<DBTest>(dbMan);
             for (int i = 0; i < count; i++) {
+                DateTime now = DateTime.UtcNow;
                 DBTest test = new DBTest();
                 test.PKInt32 = i;
                 test.StringColumn = "abc";
-                test.DateTimeColumn = DateTime.UtcNow;
+                test.DateTimeColumn = now;
+                test.DateTimeColumnNotNullable = now;
                 test.BooleanColumn = true;
                 test.DoubleColumn = i;
                 query.Add(test);
