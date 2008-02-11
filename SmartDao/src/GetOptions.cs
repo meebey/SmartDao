@@ -45,5 +45,11 @@ namespace Meebey.SmartDao
                 _Offset = value;
             }
         }
+        
+        public GetOptions()
+        {
+            _SelectFields = new List<string>();
+            _OrderBy      = new Dictionary<string, OrderByDirection>();
+        }
     }
 }

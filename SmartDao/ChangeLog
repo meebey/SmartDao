@@ -1,5 +1,9 @@
 2008-02-11  Mirco Bauer <meebey@meebey.net> 
 
+	* src/Query.cs: Fixed OrderBy check.
+
+2008-02-11  Mirco Bauer <meebey@meebey.net> 
+
 	* src/ColumnAttribute.cs, src/DatabaseManager.cs: Implemented NOT NULL
 	  support.
 	* src/Query.cs: Added profiling code.

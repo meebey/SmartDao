@@ -26,14 +26,12 @@ namespace Meebey.SmartDao.Tests
             provider = new PostgreSqlProvider();
             */
             
-            /*
             con = new NpgsqlConnection("Server=localhost;" +
                                        "Port=5433;" +
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test");
             provider = new PostgreSqlProvider();
-            */
             
             /*
             con = new MySqlConnection("Server=localhost;" + 
@@ -64,11 +62,13 @@ namespace Meebey.SmartDao.Tests
             provider = new MicrosoftSqlProvider();
             */
             
+            /*
             con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
             provider = new PostgreSqlProvider();
+            */
             
             /*
             con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
@@ -81,7 +81,7 @@ namespace Meebey.SmartDao.Tests
             
             Console.WriteLine("--- " + con + " ---");
             Console.WriteLine("--- " + provider + " ---");
-            int count = 10000;
+            int count = 1000;
             DateTime start, stop;
 
             // WARMUP
@@ -149,6 +149,14 @@ namespace Meebey.SmartDao.Tests
             // warm up
             IList<DBTest> tests = query.GetAll(null, "pk_int32");
             
+            Console.WriteLine("--- SELECT pk_int32 ---");
+            start = DateTime.UtcNow;
+            tests = query.GetAll(null, "pk_int32");
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.GetAll() rows: " + tests.Count);
+            Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
+            
             Console.WriteLine("--- SELECT * ---");
             start = DateTime.UtcNow;
             tests = query.GetAll(null, "*");
@@ -179,6 +187,7 @@ namespace Meebey.SmartDao.Tests
             stop = DateTime.UtcNow;
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
             
             Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " OFFSET " + offset + " ---");
             start = DateTime.UtcNow;
@@ -190,6 +199,18 @@ namespace Meebey.SmartDao.Tests
             stop = DateTime.UtcNow;
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
+            
+            Console.WriteLine("--- SELECT pk_int32 ORDER BY pk_int32 ---");
+            start = DateTime.UtcNow;
+            options = new GetOptions();
+            options.SelectFields.Add("pk_int32");
+            options.OrderBy.Add("pk_int32", OrderByDirection.Ascending);
+            tests = query.GetAll(null, options);
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.GetAll() rows: " + tests.Count);
+            Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
             
             Console.WriteLine("--- UPDATE string_column WHERE pk_int32 = 1 ---");
             start = DateTime.UtcNow;

@@ -1,5 +1,5 @@
 <Project name="SmartDao.Tests" fileversion="2.0" language="C#" clr-version="Net_2_0" ctype="DotNetProject">
-  <Configurations active="Debug">
+  <Configurations active="Release">
     <Configuration name="Debug" ctype="DotNetProjectConfiguration">
       <Output directory="../bin/debug" assemblyKeyFile="." assembly="SmartDao.Tests" />
       <Build debugmode="True" target="Exe" />
@@ -7,7 +7,7 @@
       <CodeGeneration compiler="Mcs" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" definesymbols="DEBUG,TRACE,LOG4NET" generatexmldocumentation="False" win32Icon="." ctype="CSharpCompilerParameters" />
     </Configuration>
     <Configuration name="Release" ctype="DotNetProjectConfiguration">
-      <Output directory="../bin/release" assembly="SmartDao.Tests" />
+      <Output directory="../bin/release" assemblyKeyFile="." assembly="SmartDao.Tests" />
       <Build debugmode="False" target="Exe" />
       <Execution runwithwarnings="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
       <CodeGeneration compiler="Mcs" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" generatexmldocumentation="False" win32Icon="." ctype="CSharpCompilerParameters" />

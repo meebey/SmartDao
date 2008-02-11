@@ -9,7 +9,7 @@ namespace Meebey.SmartDao
     public class Query<T> where T : new()
     {
 #if LOG4NET
-        private static readonly log4net.ILog _Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog _Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.GetGenericTypeDefinition());
 #endif
         private DatabaseManager _DatabaseManager;
         private Type            _TableType;
@@ -221,7 +221,7 @@ namespace Meebey.SmartDao
             
             IList<string> orderByColumns = null;
             IList<string> orderByDirections = null;
-            if (options.OrderBy != null) {
+            if (options.OrderBy != null && options.OrderBy.Count > 0) {
                 orderByColumns    = new List<string>(options.OrderBy.Count);
                 orderByDirections = new List<string>(options.OrderBy.Count);
                 foreach (KeyValuePair<string, OrderByDirection> entry in options.OrderBy) {
