@@ -182,7 +182,7 @@ namespace Meebey.SmartDao
             if (primaryKeys.Count > 0) {
                 sql.Append(", \nPRIMARY KEY (");
                 foreach (string pk in primaryKeys) {
-                    sql.AppendFormat("{0}, ", pk);
+                    sql.AppendFormat("{0}, ", GetColumnName(pk));
                 }
                 sql.Remove(sql.Length - 2, 2);
                 sql.Append(")");
