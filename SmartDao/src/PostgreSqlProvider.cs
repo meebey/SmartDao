@@ -48,6 +48,9 @@ namespace Meebey.SmartDao
             for (int i = 0; i < columnNames.Count; i++) {
                 columnNames[i] = String.Format("\"{0}\"", columnNames[i]);
             }
+            for (int i = 0; i < primaryKeys.Count; i++) {
+                primaryKeys[i] = String.Format("\"{0}\"", primaryKeys[i]);
+            }
             
             return base.CreateCreateTableStatement(tableName,
                                                    columnNames,
