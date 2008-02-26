@@ -35,6 +35,28 @@ namespace Meebey.SmartDao
             return tableName;
         }
         
+        public override string CreateCreateTableStatement(string tableName,
+                                                          IList<string> columnNames,
+                                                          IList<Type> columnTypes,
+                                                          IList<int> columnLengths,
+                                                          IList<bool?> columnIsNullables,
+                                                          IList<string> primaryKeys)
+        {
+            // HACK: we need to quote the table and column names, else
+            // postgresql will ignore our casing and make everything lower-case
+            tableName = String.Format("\"{0}\"", tableName);
+            for (int i = 0; i < columnNames.Count; i++) {
+                columnNames[i] = String.Format("\"{0}\"", columnNames[i]);
+            }
+            
+            return base.CreateCreateTableStatement(tableName,
+                                                   columnNames,
+                                                   columnTypes,
+                                                   columnLengths,
+                                                   columnIsNullables,
+                                                   primaryKeys);
+        }
+
         public override string CreateSelectStatement(string schemaName,
                                                      string tableName,
                                                      IList<string> selectColumnNames, 
