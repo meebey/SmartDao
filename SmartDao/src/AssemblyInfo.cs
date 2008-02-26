@@ -1,5 +1,7 @@
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("SmartDao")]
 [assembly: AssemblyDescription("")]
@@ -14,3 +16,6 @@ using System.Runtime.CompilerServices;
 
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile("")]
+
+[assembly: ComVisible(false)]
+[assembly: CLSCompliant(true)]
