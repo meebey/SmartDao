@@ -91,18 +91,5 @@ namespace Meebey.SmartDao
             
             return sql + limitClause.ToString();
         }
-        
-        // HACK: postgresql calls INFORMATION_SCHEMA information_schema.
-        // Since we quote all table and column names properly, all identifier names
-        // are case-sensitive, thus we need to use information_schema lowercased.
-        public override string CreateTableExistsStatement (string tableName)
-        {
-            return CreateSelectStatement("information_schema", "tables",
-                                         new string[] { "COUNT(*)" },
-                                         new string[] { "table_name" },
-                                         new string[] { "=" },
-                                         new string[] { String.Format("'{0}'", tableName) },
-                                         null, null, null, null);
-        }
     }
 }

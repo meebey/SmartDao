@@ -257,7 +257,7 @@ namespace Meebey.SmartDao
         
         public virtual string CreateTableExistsStatement(string tableName)
         {
-            return CreateSelectStatement("INFORMATION_SCHEMA", "TABLES",
+            return CreateSelectStatement("information_schema", "tables",
                                          new string[] { "COUNT(*)" },
                                          new string[] { "table_name" },
                                          new string[] { "=" },
