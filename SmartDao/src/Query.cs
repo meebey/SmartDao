@@ -133,6 +133,8 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("record");
             }
             
+            InitFields();
+
             foreach (string pkColumn in _PrimaryKeyColumns) {
                 PropertyInfo property = _ColumnToProperties[pkColumn];
 
@@ -210,6 +212,8 @@ namespace Meebey.SmartDao
             if (template == null) {
                 throw new ArgumentNullException("entry");
             }
+            
+            InitFields();
             
             foreach (string pkColumn in _PrimaryKeyColumns) {
                 PropertyInfo property = _ColumnToProperties[pkColumn];
