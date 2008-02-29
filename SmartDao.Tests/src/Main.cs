@@ -26,12 +26,14 @@ namespace Meebey.SmartDao.Tests
             provider = new PostgreSqlProvider();
             */
             
+            /*
             con = new NpgsqlConnection("Server=localhost;" +
                                        "Port=5433;" +
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test");
             provider = new PostgreSqlProvider();
+            */
             
             /*
             con = new MySqlConnection("Server=localhost;" + 
@@ -62,13 +64,11 @@ namespace Meebey.SmartDao.Tests
             provider = new MicrosoftSqlProvider();
             */
             
-            /*
             con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
             provider = new PostgreSqlProvider();
-            */
             
             /*
             con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
@@ -148,6 +148,10 @@ namespace Meebey.SmartDao.Tests
             Query<DBTest> query = new Query<DBTest>(dbMan);
             // warm up
             IList<DBTest> tests = query.GetAll(null, "pk_int32");
+            DBTest template;
+            int limit = count / 4;
+            int offset = count / 2;
+            GetOptions options;
             
             Console.WriteLine("--- SELECT pk_int32 ---");
             start = DateTime.UtcNow;
@@ -167,16 +171,21 @@ namespace Meebey.SmartDao.Tests
             
             Console.WriteLine("--- SELECT pk_int32 WHERE pk_int32 = 1 ---");
             start = DateTime.UtcNow;
-            DBTest template = new DBTest();
+            template = new DBTest();
             template.PKInt32 = 1;
             tests = query.GetAll(template, "pk_int32");
             stop = DateTime.UtcNow;
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
-            int limit = count / 4;
-            int offset = count / 2;
-            GetOptions options;
+            Console.WriteLine("--- SELECT pk_int32 WHERE pk_int32 = 1 ---");
+            start = DateTime.UtcNow;
+            template = new DBTest();
+            template.PKInt32 = 1;
+            query.GetSingle(template, "pk_int32");
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.GetSingle() took: " + (stop - start).TotalMilliseconds + " ms");
+            
             
             Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " ---");
             start = DateTime.UtcNow;
@@ -212,6 +221,14 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
             
+            Console.WriteLine("--- SELECT pk_int32 LIMIT 1 ---");
+            start = DateTime.UtcNow;
+            options = new GetOptions();
+            options.SelectFields.Add("pk_int32");
+            query.GetFirst(null, options);
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.GetFirst() took: " + (stop - start).TotalMilliseconds + " ms");
+
             Console.WriteLine("--- UPDATE string_column WHERE pk_int32 = 1 ---");
             start = DateTime.UtcNow;
             template = new DBTest();
@@ -222,6 +239,15 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("query.SetAll() rows: " + rows);
             Console.WriteLine("query.SetAll() took: " + (stop - start).TotalMilliseconds + " ms");
 
+            Console.WriteLine("--- UPDATE string_column WHERE pk_int32 = 1 ---");
+            start = DateTime.UtcNow;
+            template = new DBTest();
+            template.PKInt32 = 1;
+            template.StringColumn = "barfoo";
+            query.SetSingle(template);
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.SetSingle() took: " + (stop - start).TotalMilliseconds + " ms");
+            
             con.Close();
             con.Dispose();
         }

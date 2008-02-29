@@ -127,6 +127,37 @@ namespace Meebey.SmartDao
             return entry;
         }
         
+        public void SetSingle(T record)
+        {
+            if (record == null) {
+                throw new ArgumentNullException("record");
+            }
+            
+            foreach (string pkColumn in _PrimaryKeyColumns) {
+                PropertyInfo property = _ColumnToProperties[pkColumn];
+
+                object value = property.GetValue(record, null);
+                if (value == null) {
+                    throw new MissingPrimaryKeyException("Property: " + property.Name + " must not be null.");
+                }
+            }
+            
+            int res = SetAll(record);
+            if (res == 0) {
+                throw new DataNotFoundException();
+            }
+            if (res > 1) {
+                throw new TooMuchDataUpdatedException();
+            }
+        }
+        
+        /*
+        public int SetAll(T template, T value)
+        {
+            // support update of PK
+        }
+        */
+        
         public int SetAll(T entry)
         {
             if (entry == null) {
@@ -173,6 +204,57 @@ namespace Meebey.SmartDao
 #endif
             return res;
         }
+        
+        public T GetSingle(T template, params string[] selectColumns)
+        {
+            if (template == null) {
+                throw new ArgumentNullException("entry");
+            }
+            
+            foreach (string pkColumn in _PrimaryKeyColumns) {
+                PropertyInfo property = _ColumnToProperties[pkColumn];
+
+                object value = property.GetValue(template, null);
+                if (value == null) {
+                    throw new MissingPrimaryKeyException("Property: " + property.Name + " must not be null.");
+                }
+            }
+
+            IList<T> res = GetAll(template, selectColumns);
+            if (res.Count == 0) {
+                throw new DataNotFoundException();
+            }
+            
+            return res[0];
+        }
+        
+        public T GetFirst(T template, GetOptions options)
+        {
+            if (options == null) {
+                throw new ArgumentNullException("options");
+            }
+            
+            options.Limit = 1;
+            IList<T> res = GetAll(template, options);
+            if (res.Count == 0) {
+                throw new DataNotFoundException();
+            }
+            
+            return res[0];
+        }
+        
+        /*
+        public int GetCount(T template, GetOptions options)
+        {
+            if (options == null) {
+                throw new ArgumentNullException("options");
+            }
+            
+            options.SelectFields = new string { "COUNT(*)" };
+            IList<T> res = GetAll(template, options);
+            return res
+        }
+        */
         
         public IList<T> GetAll(T template, params string[] selectColumns)
         {

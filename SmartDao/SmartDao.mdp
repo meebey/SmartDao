@@ -33,6 +33,12 @@
     <File name="src/UniqueAttribute.cs" subtype="Code" buildaction="Compile" />
     <File name="src/OrderByDirection.cs" subtype="Code" buildaction="Compile" />
     <File name="src/DatabaseUri.cs" subtype="Code" buildaction="Compile" />
+    <File name="src/SmartDaoException.cs" subtype="Code" buildaction="Compile" />
+    <File name="src/MissingPrimaryKeyException.cs" subtype="Code" buildaction="Compile" />
+    <File name="src/DataNotFoundException.cs" subtype="Code" buildaction="Compile" />
+    <File name="src/TooMuchDataException.cs" subtype="Code" buildaction="Compile" />
+    <File name="src/TooMuchDataFoundException.cs" subtype="Code" buildaction="Compile" />
+    <File name="src/TooMuchDataUpdatedException.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
