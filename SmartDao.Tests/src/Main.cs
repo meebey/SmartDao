@@ -178,6 +178,16 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             
+            Console.WriteLine("--- SELECT pk_int32 WHERE pk_int32 = 1 AND string_column = 'abc' ---");
+            start = DateTime.UtcNow;
+            template = new DBTest();
+            template.PKInt32 = 1;
+            template.StringColumn = "abc";
+            tests = query.GetAll(template, "pk_int32");
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.GetAll() rows: " + tests.Count);
+            Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            
             Console.WriteLine("--- SELECT pk_int32 WHERE pk_int32 = 1 ---");
             start = DateTime.UtcNow;
             template = new DBTest();
@@ -239,6 +249,18 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("query.SetAll() rows: " + rows);
             Console.WriteLine("query.SetAll() took: " + (stop - start).TotalMilliseconds + " ms");
 
+            /*
+            Console.WriteLine("--- UPDATE string_column WHERE pk_int32 = 1 AND string_column = 'foobar' ---");
+            start = DateTime.UtcNow;
+            template = new DBTest();
+            template.PKInt32 = 1;
+            template.StringColumn = "foobar";
+            rows = query.SetAll(template);
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.SetAll() rows: " + rows);
+            Console.WriteLine("query.SetAll() took: " + (stop - start).TotalMilliseconds + " ms");
+            */
+            
             Console.WriteLine("--- UPDATE string_column WHERE pk_int32 = 1 ---");
             start = DateTime.UtcNow;
             template = new DBTest();

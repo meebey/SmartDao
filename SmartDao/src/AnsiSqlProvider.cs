@@ -308,12 +308,12 @@ namespace Meebey.SmartDao
             if (whereColumnNames != null && whereColumnNames.Count > 0) {
                 whereClause = new StringBuilder();
                 for (int idx = 0; idx < whereColumnNames.Count; idx++) {
-                    whereClause.AppendFormat("{0} {1} {2}, ",
+                    whereClause.AppendFormat("{0} {1} {2} AND ",
                                              GetColumnName(whereColumnNames[idx]),
                                              whereColumnOperators[idx],
                                              whereColumnValues[idx]);
                 }
-                whereClause.Remove(whereClause.Length - 2, 2);
+                whereClause.Remove(whereClause.Length - 4, 4);
             }
             return CreateSelectStatement(schemaName, tableName,
                                          selectColumnNames,
@@ -406,12 +406,12 @@ namespace Meebey.SmartDao
             if (whereColumnNames.Count > 0) {
                 whereClause = new StringBuilder();
                 for (int idx = 0; idx < whereColumnNames.Count; idx++) {
-                    whereClause.AppendFormat("{0} {1} {2}, ",
+                    whereClause.AppendFormat("{0} {1} {2} AND ",
                                              GetColumnName(whereColumnNames[idx]),
                                              whereColumnOperators[idx],
                                              whereColumnValues[idx]);
                 }
-                whereClause.Remove(whereClause.Length - 2, 2);
+                whereClause.Remove(whereClause.Length - 4, 4);
             }
             return CreateUpdateStatement(tableName, setColumnNames, setColumnValues,
                                          whereClause != null ? whereClause.ToString() : null);
