@@ -87,7 +87,7 @@ namespace Meebey.SmartDao
         public IList<T> Add(IList<T> entry)
         {
             // TODO: implement multi-inserts here
-            return null;
+            throw new NotImplementedException();
         }
         
         public T Add(T entry)
@@ -98,7 +98,7 @@ namespace Meebey.SmartDao
             
             InitFields();
             
-            List<string> columnNames = new List<string>(_ColumnToProperties.Count);
+            List<string> columnNames  = new List<string>(_ColumnToProperties.Count);
             List<object> columnValues = new List<object>(_ColumnToProperties.Count);
             foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
                 string columnName = kv.Key;
@@ -210,7 +210,7 @@ namespace Meebey.SmartDao
         public T GetSingle(T template, params string[] selectColumns)
         {
             if (template == null) {
-                throw new ArgumentNullException("entry");
+                throw new ArgumentNullException("template");
             }
             
             InitFields();
@@ -275,9 +275,9 @@ namespace Meebey.SmartDao
             
             InitFields();
 
-            List<string> whereColumnNames = null;
+            List<string> whereColumnNames     = null;
             List<string> whereColumnOperators = null;
-            List<object> whereColumnValues = null;
+            List<object> whereColumnValues    = null;
             if (template != null) {
                 whereColumnNames     = new List<string>(_ColumnToProperties.Count);
                 whereColumnOperators = new List<string>(_ColumnToProperties.Count);
@@ -305,7 +305,7 @@ namespace Meebey.SmartDao
                 }
             }
             
-            IList<string> orderByColumns = null;
+            IList<string> orderByColumns    = null;
             IList<string> orderByDirections = null;
             if (options.OrderBy != null && options.OrderBy.Count > 0) {
                 orderByColumns    = new List<string>(options.OrderBy.Count);
@@ -375,6 +375,76 @@ namespace Meebey.SmartDao
                 
                 return rows;
             }                        
+        }
+        
+        public void RemoveSingle(T template)
+        {
+            if (template == null) {
+                throw new ArgumentNullException("template");
+            }
+            
+            InitFields();
+            
+            foreach (string pkColumn in _PrimaryKeyColumns) {
+                PropertyInfo property = _ColumnToProperties[pkColumn];
+
+                object value = property.GetValue(template, null);
+                if (value == null) {
+                    throw new MissingPrimaryKeyException("Property: " + property.Name + " must not be null.");
+                }
+            }
+
+            int count = RemoveAll(template);
+            if (count == 0) {
+                throw new DataNotFoundException();
+            }
+            if (count > 1) {
+                throw new TooMuchDataRemovedException();
+            }
+        }
+        
+        public int RemoveAll(T template)
+        {
+            InitFields();
+            
+            List<string> whereColumnNames     = null;
+            List<string> whereColumnOperators = null;
+            List<object> whereColumnValues    = null;
+            if (template != null) {
+                whereColumnNames     = new List<string>(_ColumnToProperties.Count);
+                whereColumnOperators = new List<string>(_ColumnToProperties.Count);
+                whereColumnValues    = new List<object>(_ColumnToProperties.Count);
+                foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+                    string columnName = kv.Key;
+                    PropertyInfo property = kv.Value;
+
+                    object value = property.GetValue(template, null);
+                    if (value == null) {
+                        continue;
+                    }
+                    
+                    whereColumnNames.Add(columnName);
+                    whereColumnOperators.Add("=");
+                    whereColumnValues.Add(value);
+                }
+            }
+            
+            IDbCommand cmd = _DatabaseManager.CreateDeleteCommand(_TableName,
+                                                                  whereColumnNames,
+                                                                  whereColumnOperators,
+                                                                  whereColumnValues);
+#if LOG4NET
+            _Logger.Debug("RemoveAll(): SQL: " + cmd.CommandText);
+            DateTime start, stop;
+            start = DateTime.UtcNow;
+#endif
+            int res = cmd.ExecuteNonQuery();
+#if LOG4NET
+            _Logger.Debug("RemoveAll(): affected rows: " + res);
+            stop = DateTime.UtcNow;
+            _Logger.Debug("RemoveAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
+#endif
+            return res;
         }
     }
 }

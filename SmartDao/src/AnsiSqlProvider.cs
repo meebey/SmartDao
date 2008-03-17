@@ -402,8 +402,17 @@ namespace Meebey.SmartDao
                 throw new ArgumentException("setColumnNames and setColumnValues must have the same size.");
             }
             
+            if (whereColumnNames != null &&
+                whereColumnOperators != null &&
+                whereColumnValues != null) {
+                if (!(whereColumnNames.Count == whereColumnOperators.Count &&
+                      whereColumnOperators.Count == whereColumnValues.Count)) {
+                    throw new ArgumentException("columnNames, columnOperators and columnValues must have the same size.");
+                }
+            }
+            
             StringBuilder whereClause = null;
-            if (whereColumnNames.Count > 0) {
+            if (whereColumnNames != null && whereColumnNames.Count > 0) {
                 whereClause = new StringBuilder();
                 for (int idx = 0; idx < whereColumnNames.Count; idx++) {
                     whereClause.AppendFormat("{0} {1} {2} AND ",
@@ -469,6 +478,39 @@ namespace Meebey.SmartDao
             return sql.ToString();
         }
     
+        public virtual string CreateDeleteStatement(string tableName,
+                                                    IList<string> whereColumnNames,
+                                                    IList<string> whereColumnOperators,
+                                                    IList<string> whereColumnValues)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            
+            if (whereColumnNames != null &&
+                whereColumnOperators != null &&
+                whereColumnValues != null) {
+                if (!(whereColumnNames.Count == whereColumnOperators.Count &&
+                      whereColumnOperators.Count == whereColumnValues.Count)) {
+                    throw new ArgumentException("columnNames, columnOperators and columnValues must have the same size.");
+                }
+            }
+            
+            StringBuilder whereClause = null;
+            if (whereColumnNames != null && whereColumnNames.Count > 0) {
+                whereClause = new StringBuilder();
+                for (int idx = 0; idx < whereColumnNames.Count; idx++) {
+                    whereClause.AppendFormat("{0} {1} {2} AND ",
+                                             GetColumnName(whereColumnNames[idx]),
+                                             whereColumnOperators[idx],
+                                             whereColumnValues[idx]);
+                }
+                whereClause.Remove(whereClause.Length - 4, 4);
+            }
+            return CreateDeleteStatement(tableName,
+                                         whereClause != null ? whereClause.ToString() : null);
+        }
+        
         private static bool IsNullableType(Type type)
         {
             if (type == null) {

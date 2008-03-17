@@ -12,13 +12,13 @@ using System.Runtime.Serialization;
 namespace Meebey.SmartDao
 {
     [Serializable]
-    public class TooMuchDataException : SmartDaoException
+    public abstract class TooMuchDataException : SmartDaoException
     {
-        public TooMuchDataException()
+        protected TooMuchDataException()
         {
         }
         
-        public TooMuchDataException(string message) : base(message)
+        protected TooMuchDataException(string message) : base(message)
         {
         }
         

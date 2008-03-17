@@ -287,6 +287,15 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("setColumnValues");
             }
             
+            if (whereColumnNames != null &&
+                whereColumnOperators != null &&
+                whereColumnValues != null) {
+                if (!(whereColumnNames.Count == whereColumnOperators.Count &&
+                      whereColumnOperators.Count == whereColumnValues.Count)) {
+                    throw new ArgumentException("whereColumnNames, whereColumnOperators and whereColumnValues must have the same size.");
+                }
+            }
+            
             IDbCommand command = _DBConnection.CreateCommand();
             List<string> setParameterNames   = new List<string>(setColumnValues.Count);
             for (int idx = 0; idx < setColumnNames.Count; idx++) {
@@ -344,6 +353,15 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("tableName");
             }
             
+            if (whereColumnNames != null &&
+                whereColumnOperators != null &&
+                whereColumnValues != null) {
+                if (!(whereColumnNames.Count == whereColumnOperators.Count &&
+                      whereColumnOperators.Count == whereColumnValues.Count)) {
+                    throw new ArgumentException("whereColumnNames, whereColumnOperators and whereColumnValues must have the same size.");
+                }
+            }
+            
             IDbCommand command = _DBConnection.CreateCommand();
             
             List<string> parameterNames = null;
@@ -372,6 +390,52 @@ namespace Meebey.SmartDao
                                                             orderByColumnOrders,
                                                             limit,
                                                             offset);
+            command.CommandText = sql;
+            return command;
+        }
+        
+        public virtual IDbCommand CreateDeleteCommand(string tableName,
+                                                      IList<string> whereColumnNames,
+                                                      IList<string> whereColumnOperators,
+                                                      IList<object> whereColumnValues)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            
+            if (whereColumnNames != null &&
+                whereColumnOperators != null &&
+                whereColumnValues != null) {
+                if (!(whereColumnNames.Count == whereColumnOperators.Count &&
+                      whereColumnOperators.Count == whereColumnValues.Count)) {
+                    throw new ArgumentException("whereColumnNames, whereColumnOperators and whereColumnValues must have the same size.");
+                }
+            }
+            
+            IDbCommand command = _DBConnection.CreateCommand();
+            List<string> whereParameterNames = null;
+            if (whereColumnNames != null && whereColumnNames.Count > 0) {
+                whereParameterNames = new List<string>(whereColumnNames.Count);
+                for (int idx = 0; idx < whereColumnNames.Count; idx++) {
+                    string parameterName = String.Format("{0}{1}",
+                                                         _SqlProvider.GetParameterCharacter(),
+                                                         idx);
+                    object value = whereColumnValues[idx];
+                    DbType dbType = _SqlProvider.GetDBType(value.GetType());
+                    
+                    IDbDataParameter parameter = command.CreateParameter();
+                    parameter.ParameterName = parameterName;
+                    parameter.DbType = dbType;
+                    parameter.Value = value;
+                    command.Parameters.Add(parameter);
+                    whereParameterNames.Add(parameterName);
+                }
+            }
+            
+            string sql = _SqlProvider.CreateDeleteStatement(tableName,
+                                                            whereColumnNames,
+                                                            whereColumnOperators,
+                                                            whereParameterNames);
             command.CommandText = sql;
             return command;
         }

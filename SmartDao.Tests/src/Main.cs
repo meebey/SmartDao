@@ -270,6 +270,14 @@ namespace Meebey.SmartDao.Tests
             stop = DateTime.UtcNow;
             Console.WriteLine("query.SetSingle() took: " + (stop - start).TotalMilliseconds + " ms");
             
+            Console.WriteLine("--- DELETE WHERE pk_int32 = 1 ---");
+            start = DateTime.UtcNow;
+            template = new DBTest();
+            template.PKInt32 = 1;
+            query.RemoveSingle(template);
+            stop = DateTime.UtcNow;
+            Console.WriteLine("query.RemoveSingle() took: " + (stop - start).TotalMilliseconds + " ms");
+            
             con.Close();
             con.Dispose();
         }

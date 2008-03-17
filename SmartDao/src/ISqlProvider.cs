@@ -59,6 +59,11 @@ namespace Meebey.SmartDao
                                      IList<string> whereColumnNames,
                                      IList<string> whereColumnOperators,
                                      IList<string> whereColumnValues);
-        string CreateDeleteStatement(string tableName, string whereClause);
+        string CreateDeleteStatement(string tableName,
+                                     string whereClause);
+        string CreateDeleteStatement(string tableName,
+                                     IList<string> whereColumnNames,
+                                     IList<string> whereColumnOperators,
+                                     IList<string> whereColumnValues);
     }
 }
