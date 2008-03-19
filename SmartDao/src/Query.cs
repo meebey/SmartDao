@@ -68,10 +68,18 @@ namespace Meebey.SmartDao
                 } else {
                     columnName = property.Name;
                 }
+#if LOG4NET
+                _Logger.Debug(String.Format("InitFields(): found Column Property: '{0}' (Column Name: '{1}')",
+                                            property.Name, columnName));
+#endif
                 _ColumnToProperties.Add(columnName, property);
                 
                 object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
                 if (pkAttrs != null && pkAttrs.Length > 0) {
+#if LOG4NET
+                    _Logger.Debug(String.Format("InitFields(): found PrimaryKey Property: '{0}'",
+                                                property.Name));
+#endif
                     _PrimaryKeyColumns.Add(columnName);
                 }
             }
