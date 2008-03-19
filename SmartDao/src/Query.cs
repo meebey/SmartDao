@@ -367,13 +367,13 @@ namespace Meebey.SmartDao
                         string name = reader.GetName(i);
                         object value = reader.GetValue(i);
                         
-                        PropertyInfo property = _ColumnToProperties[name];
-                        if (property == null) {
-                            throw new InvalidOperationException("Field for column could not be found: " + name);
+                        PropertyInfo property;
+                        if (!_ColumnToProperties.TryGetValue(name, out property)) {
+                            throw new InvalidOperationException("Property for column could not be found: " + name);
                         }
                         if (!property.PropertyType.IsAssignableFrom(value.GetType())) {
                             throw new InvalidOperationException(
-                                        String.Format("Field type: {0} of {1} doesn't match column type: {2} for column: {3}",
+                                        String.Format("Property type: {0} of {1} doesn't match column type: {2} for column: {3}",
                                                       property.PropertyType, row.GetType() , value.GetType(), name));
                         }
                         
