@@ -147,7 +147,7 @@ namespace Meebey.SmartDao.Tests
             
             Query<DBTest> query = new Query<DBTest>(dbMan);
             // warm up
-            IList<DBTest> tests = query.GetAll(null, "pk_int32");
+            IList<DBTest> tests = query.GetAll(null, "PKInt32");
             DBTest template;
             int limit = count / 4;
             int offset = count / 2;
@@ -155,7 +155,7 @@ namespace Meebey.SmartDao.Tests
             
             Console.WriteLine("--- SELECT pk_int32 ---");
             start = DateTime.UtcNow;
-            tests = query.GetAll(null, "pk_int32");
+            tests = query.GetAll(null, "PKInt32");
             stop = DateTime.UtcNow;
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
@@ -173,7 +173,7 @@ namespace Meebey.SmartDao.Tests
             start = DateTime.UtcNow;
             template = new DBTest();
             template.PKInt32 = 1;
-            tests = query.GetAll(template, "pk_int32");
+            tests = query.GetAll(template, "PKInt32");
             stop = DateTime.UtcNow;
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
@@ -183,7 +183,7 @@ namespace Meebey.SmartDao.Tests
             template = new DBTest();
             template.PKInt32 = 1;
             template.StringColumn = "abc";
-            tests = query.GetAll(template, "pk_int32");
+            tests = query.GetAll(template, "PKInt32");
             stop = DateTime.UtcNow;
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
@@ -192,7 +192,7 @@ namespace Meebey.SmartDao.Tests
             start = DateTime.UtcNow;
             template = new DBTest();
             template.PKInt32 = 1;
-            query.GetSingle(template, "pk_int32");
+            query.GetSingle(template, "PKInt32");
             stop = DateTime.UtcNow;
             Console.WriteLine("query.GetSingle() took: " + (stop - start).TotalMilliseconds + " ms");
             
@@ -200,7 +200,7 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " ---");
             start = DateTime.UtcNow;
             options = new GetOptions();
-            options.SelectFields = new string[] { "pk_int32" };
+            options.SelectFields = new string[] { "PKInt32" };
             options.Limit = limit;
             tests = query.GetAll(null, options);
             stop = DateTime.UtcNow;
@@ -211,7 +211,7 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("--- SELECT pk_int32 LIMIT " + limit + " OFFSET " + offset + " ---");
             start = DateTime.UtcNow;
             options = new GetOptions();
-            options.SelectFields = new string[] { "pk_int32" };
+            options.SelectFields = new string[] { "PKInt32" };
             options.Limit = limit;
             options.Offset = offset;
             tests = query.GetAll(null, options);
@@ -223,7 +223,7 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("--- SELECT pk_int32 ORDER BY pk_int32 ---");
             start = DateTime.UtcNow;
             options = new GetOptions();
-            options.SelectFields.Add("pk_int32");
+            options.SelectFields.Add("PKInt32");
             options.OrderBy.Add("pk_int32", OrderByDirection.Ascending);
             tests = query.GetAll(null, options);
             stop = DateTime.UtcNow;
@@ -234,7 +234,7 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("--- SELECT pk_int32 LIMIT 1 ---");
             start = DateTime.UtcNow;
             options = new GetOptions();
-            options.SelectFields.Add("pk_int32");
+            options.SelectFields.Add("PKInt32");
             query.GetFirst(null, options);
             stop = DateTime.UtcNow;
             Console.WriteLine("query.GetFirst() took: " + (stop - start).TotalMilliseconds + " ms");

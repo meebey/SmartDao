@@ -11,11 +11,12 @@ namespace Meebey.SmartDao
 #if LOG4NET
         private static readonly log4net.ILog _Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.GetGenericTypeDefinition());
 #endif
-        private DatabaseManager _DatabaseManager;
-        private Type            _TableType;
-        private string          _TableName;
-        private IDictionary<string, PropertyInfo> _ColumnToProperties;
-        private IList<string>                     _PrimaryKeyColumns;
+        private DatabaseManager f_DatabaseManager;
+        private Type            f_TableType;
+        private string          f_TableName;
+        private IDictionary<string, PropertyInfo> f_ColumnToProperties;
+        private IList<string>                     f_PrimaryKeyColumns;
+        private IDictionary<string, string>       f_PropertyToColumn;
         
         public Query(DatabaseManager dbManager)
         {
@@ -23,13 +24,13 @@ namespace Meebey.SmartDao
                 throw new ArgumentNullException("dbManager");
             }
             
-            _DatabaseManager = dbManager;
-            _TableType = typeof(T);
+            f_DatabaseManager = dbManager;
+            f_TableType = typeof(T);
         }
         
         private void InitFields()
         {
-            if (_ColumnToProperties != null) {
+            if (f_ColumnToProperties != null) {
                 return;
             }
             
@@ -37,17 +38,18 @@ namespace Meebey.SmartDao
             DateTime start, stop;
             start = DateTime.UtcNow;
 #endif
-            object[] tableAttrs = _TableType.GetCustomAttributes(typeof(TableAttribute), true);
+            object[] tableAttrs = f_TableType.GetCustomAttributes(typeof(TableAttribute), true);
             if (tableAttrs == null || tableAttrs.Length == 0) {
                 throw new ArgumentException("T", "Type does not contain a TableAttribute.");
             }
             
             TableAttribute tableAttr = (TableAttribute) tableAttrs[0];
-            _TableName = tableAttr.Name;
+            f_TableName = tableAttr.Name;
             
-            PropertyInfo[] properties = _TableType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            _ColumnToProperties = new Dictionary<string, PropertyInfo>(properties.Length);
-            _PrimaryKeyColumns = new List<string>();
+            PropertyInfo[] properties = f_TableType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            f_ColumnToProperties = new Dictionary<string, PropertyInfo>(properties.Length);
+            f_PropertyToColumn   = new Dictionary<string, string>(properties.Length);
+            f_PrimaryKeyColumns  = new List<string>();
             bool foundColumn = false;
             foreach (PropertyInfo property in properties) {
                 object[] columnAttrs = property.GetCustomAttributes(typeof(ColumnAttribute), true);
@@ -72,7 +74,8 @@ namespace Meebey.SmartDao
                 _Logger.Debug(String.Format("InitFields(): found Column Property: '{0}' (Column Name: '{1}')",
                                             property.Name, columnName));
 #endif
-                _ColumnToProperties.Add(columnName, property);
+                f_ColumnToProperties.Add(columnName, property);
+                f_PropertyToColumn.Add(property.Name, columnName);
                 
                 object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
                 if (pkAttrs != null && pkAttrs.Length > 0) {
@@ -80,7 +83,7 @@ namespace Meebey.SmartDao
                     _Logger.Debug(String.Format("InitFields(): found PrimaryKey Property: '{0}'",
                                                 property.Name));
 #endif
-                    _PrimaryKeyColumns.Add(columnName);
+                    f_PrimaryKeyColumns.Add(columnName);
                 }
             }
             if (!foundColumn) {
@@ -106,9 +109,9 @@ namespace Meebey.SmartDao
             
             InitFields();
             
-            List<string> columnNames  = new List<string>(_ColumnToProperties.Count);
-            List<object> columnValues = new List<object>(_ColumnToProperties.Count);
-            foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+            List<string> columnNames  = new List<string>(f_ColumnToProperties.Count);
+            List<object> columnValues = new List<object>(f_ColumnToProperties.Count);
+            foreach (KeyValuePair<string, PropertyInfo> kv in f_ColumnToProperties) {
                 string columnName = kv.Key;
                 PropertyInfo property = kv.Value;
                 
@@ -120,7 +123,7 @@ namespace Meebey.SmartDao
                 columnValues.Add(value);
             }
             
-            IDbCommand cmd = _DatabaseManager.CreateInsertCommand(_TableName, columnNames, columnValues);
+            IDbCommand cmd = f_DatabaseManager.CreateInsertCommand(f_TableName, columnNames, columnValues);
 #if LOG4NET
             _Logger.Debug("Add(): SQL: " + cmd.CommandText);
             DateTime start, stop;
@@ -143,8 +146,8 @@ namespace Meebey.SmartDao
             
             InitFields();
 
-            foreach (string pkColumn in _PrimaryKeyColumns) {
-                PropertyInfo property = _ColumnToProperties[pkColumn];
+            foreach (string pkColumn in f_PrimaryKeyColumns) {
+                PropertyInfo property = f_ColumnToProperties[pkColumn];
 
                 object value = property.GetValue(record, null);
                 if (value == null) {
@@ -178,10 +181,10 @@ namespace Meebey.SmartDao
             
             List<string> setColumnNames       = new List<string>();
             List<object> setColumnValues      = new List<object>();
-            List<string> whereColumnNames     = new List<string>(_PrimaryKeyColumns.Count);
-            List<string> whereColumnOperators = new List<string>(_PrimaryKeyColumns.Count);
-            List<object> whereColumnValues    = new List<object>(_PrimaryKeyColumns.Count);
-            foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+            List<string> whereColumnNames     = new List<string>(f_PrimaryKeyColumns.Count);
+            List<string> whereColumnOperators = new List<string>(f_PrimaryKeyColumns.Count);
+            List<object> whereColumnValues    = new List<object>(f_PrimaryKeyColumns.Count);
+            foreach (KeyValuePair<string, PropertyInfo> kv in f_ColumnToProperties) {
                 string columnName = kv.Key;
                 PropertyInfo property = kv.Value;
 
@@ -190,7 +193,7 @@ namespace Meebey.SmartDao
                     continue;
                 }
                 
-                if (_PrimaryKeyColumns.Contains(columnName)) {
+                if (f_PrimaryKeyColumns.Contains(columnName)) {
                     whereColumnNames.Add(columnName);
                     whereColumnOperators.Add("=");
                     whereColumnValues.Add(value);
@@ -200,7 +203,7 @@ namespace Meebey.SmartDao
                 }
             }
             
-            IDbCommand cmd = _DatabaseManager.CreateUpdateCommand(_TableName, setColumnNames, setColumnValues, whereColumnNames, whereColumnOperators, whereColumnValues);
+            IDbCommand cmd = f_DatabaseManager.CreateUpdateCommand(f_TableName, setColumnNames, setColumnValues, whereColumnNames, whereColumnOperators, whereColumnValues);
 #if LOG4NET
             _Logger.Debug("SetAll(): SQL: " + cmd.CommandText);
             DateTime start, stop;
@@ -223,8 +226,8 @@ namespace Meebey.SmartDao
             
             InitFields();
             
-            foreach (string pkColumn in _PrimaryKeyColumns) {
-                PropertyInfo property = _ColumnToProperties[pkColumn];
+            foreach (string pkColumn in f_PrimaryKeyColumns) {
+                PropertyInfo property = f_ColumnToProperties[pkColumn];
 
                 object value = property.GetValue(template, null);
                 if (value == null) {
@@ -287,10 +290,10 @@ namespace Meebey.SmartDao
             List<string> whereColumnOperators = null;
             List<object> whereColumnValues    = null;
             if (template != null) {
-                whereColumnNames     = new List<string>(_ColumnToProperties.Count);
-                whereColumnOperators = new List<string>(_ColumnToProperties.Count);
-                whereColumnValues    = new List<object>(_ColumnToProperties.Count);
-                foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+                whereColumnNames     = new List<string>(f_ColumnToProperties.Count);
+                whereColumnOperators = new List<string>(f_ColumnToProperties.Count);
+                whereColumnValues    = new List<object>(f_ColumnToProperties.Count);
+                foreach (KeyValuePair<string, PropertyInfo> kv in f_ColumnToProperties) {
                     string columnName = kv.Key;
                     PropertyInfo property = kv.Value;
 
@@ -319,6 +322,7 @@ namespace Meebey.SmartDao
                 orderByColumns    = new List<string>(options.OrderBy.Count);
                 orderByDirections = new List<string>(options.OrderBy.Count);
                 foreach (KeyValuePair<string, OrderByDirection> entry in options.OrderBy) {
+                    // BUG: resolve property name to column name
                     orderByColumns.Add(entry.Key);
                     string direction;
                     switch (entry.Value) {
@@ -334,10 +338,29 @@ namespace Meebey.SmartDao
                     orderByDirections.Add(direction);
                 }
             }
+
+            IList<string> selectColumnNames = null;
+            if (options.SelectFields != null &&  options.SelectFields.Count > 0) {
+                // resolve property name to column name
+                selectColumnNames = new List<string>(options.SelectFields.Count);
+                foreach (string propertyName in options.SelectFields) {
+                    // pass * as is
+                    if (propertyName == "*") {
+                        selectColumnNames.Add(propertyName);
+                        continue;
+                    }
+                    
+                    string columnName;
+                    if (!f_PropertyToColumn.TryGetValue(propertyName, out columnName)) {
+                        throw new InvalidOperationException("Property for column in SelectFields could not be found: " + propertyName);
+                    }
+                    selectColumnNames.Add(columnName);
+                }
+            }
             
             // TODO: emulate LIMIT and OFFSET support if the RDBMS doesn't support it!
-            IDbCommand cmd = _DatabaseManager.CreateSelectCommand(_TableName,
-                                                                  options.SelectFields,
+            IDbCommand cmd = f_DatabaseManager.CreateSelectCommand(f_TableName,
+                                                                  selectColumnNames,
                                                                   whereColumnNames,
                                                                   whereColumnOperators,
                                                                   whereColumnValues,
@@ -368,7 +391,7 @@ namespace Meebey.SmartDao
                         object value = reader.GetValue(i);
                         
                         PropertyInfo property;
-                        if (!_ColumnToProperties.TryGetValue(name, out property)) {
+                        if (!f_ColumnToProperties.TryGetValue(name, out property)) {
                             throw new InvalidOperationException("Property for column could not be found: " + name);
                         }
                         if (!property.PropertyType.IsAssignableFrom(value.GetType())) {
@@ -393,8 +416,8 @@ namespace Meebey.SmartDao
             
             InitFields();
             
-            foreach (string pkColumn in _PrimaryKeyColumns) {
-                PropertyInfo property = _ColumnToProperties[pkColumn];
+            foreach (string pkColumn in f_PrimaryKeyColumns) {
+                PropertyInfo property = f_ColumnToProperties[pkColumn];
 
                 object value = property.GetValue(template, null);
                 if (value == null) {
@@ -419,10 +442,10 @@ namespace Meebey.SmartDao
             List<string> whereColumnOperators = null;
             List<object> whereColumnValues    = null;
             if (template != null) {
-                whereColumnNames     = new List<string>(_ColumnToProperties.Count);
-                whereColumnOperators = new List<string>(_ColumnToProperties.Count);
-                whereColumnValues    = new List<object>(_ColumnToProperties.Count);
-                foreach (KeyValuePair<string, PropertyInfo> kv in _ColumnToProperties) {
+                whereColumnNames     = new List<string>(f_ColumnToProperties.Count);
+                whereColumnOperators = new List<string>(f_ColumnToProperties.Count);
+                whereColumnValues    = new List<object>(f_ColumnToProperties.Count);
+                foreach (KeyValuePair<string, PropertyInfo> kv in f_ColumnToProperties) {
                     string columnName = kv.Key;
                     PropertyInfo property = kv.Value;
 
@@ -437,7 +460,7 @@ namespace Meebey.SmartDao
                 }
             }
             
-            IDbCommand cmd = _DatabaseManager.CreateDeleteCommand(_TableName,
+            IDbCommand cmd = f_DatabaseManager.CreateDeleteCommand(f_TableName,
                                                                   whereColumnNames,
                                                                   whereColumnOperators,
                                                                   whereColumnValues);

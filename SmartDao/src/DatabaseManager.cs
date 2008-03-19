@@ -440,7 +440,7 @@ namespace Meebey.SmartDao
             return command;
         }
         
-        private string GetTableName(Type tableType)
+        public virtual string GetTableName(Type tableType)
         {
             if (tableType == null) {
                 throw new ArgumentNullException("tableType");
