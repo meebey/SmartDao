@@ -1,3 +1,11 @@
+2008-05-23   <> 
+
+	* src/AnsiSqlProvider.cs: Fixed compile error with gmcs >= 1.9.1
+	* src/MicrosoftSqlProvider.cs: MSSQL wants BIT instead of BOOLEAN as data
+	  type.
+	
+	  Fixed LIMIT support.
+
 2008-02-11  Mirco Bauer <meebey@meebey.net> 
 
 	* src/Query.cs: Fixed OrderBy check.

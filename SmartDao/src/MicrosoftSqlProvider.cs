@@ -27,6 +27,8 @@ namespace Meebey.SmartDao
             switch (dbType) {
                 case DbType.DateTime:
                     return "DATETIME";
+                case DbType.Boolean:
+                    return "BIT";
             }
             
             return base.GetDataTypeName(dbType);
@@ -58,7 +60,7 @@ namespace Meebey.SmartDao
             
             // remove SELECT part
             sql = sql.Substring(7);
-            sql += String.Format("SELECT TOP {0} ", limit);
+            sql = String.Format("SELECT TOP {0} {1} ", limit, sql);
             return sql;
         }
         

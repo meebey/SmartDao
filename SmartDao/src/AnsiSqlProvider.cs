@@ -171,7 +171,7 @@ namespace Meebey.SmartDao
                     sql.Append(GetDataTypeName(GetDBType(type)));
                 }
                 
-                if (!isNullable) {
+                if (isNullable != null && !isNullable.Value) {
                     sql.Append(" NOT NULL");
                 }
                 

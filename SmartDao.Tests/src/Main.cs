@@ -55,21 +55,21 @@ namespace Meebey.SmartDao.Tests
             provider = new PostgreSqlProvider();
             */
             
-            /*
             con = new SqlConnection("Server=mussolini.gsd-software.net;" + 
             //con = new SqlConnection("Server=62.80.20.132;" + 
                                     "Database=test;" +
                                     "User ID=test;" +
                                     "Password=test;");
             provider = new MicrosoftSqlProvider();
-            */
             
+			/*
             con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
                                        "Database=test;" +
                                        "User ID=test;" +
                                        "Password=test;");
             provider = new PostgreSqlProvider();
-            
+            */
+			
             /*
             con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
             //con = new NpgsqlConnection("Server=192.168.8.111;" + 
@@ -286,6 +286,7 @@ namespace Meebey.SmartDao.Tests
         {
             for (int i = 0; i < count; i++) {
                 string now = DateTime.UtcNow.ToString("s");
+                // MSSQL doesn't like 'TRUE'
                 string sql = String.Format("INSERT INTO test_table " +
                                            "(pk_int32, int32_column_fixed, " +
                                            " double_column, string_column, " +
@@ -295,7 +296,7 @@ namespace Meebey.SmartDao.Tests
                                            " boolean_column) " +
                                            "VALUES ("+
                                            " {0}, 0, {1}, 'abc', 0, '{2}', "+
-                                           " '{3}', 0, 0, 'TRUE')",
+                                           " '{3}', 0, 0, 1)",
                                            i, i, now, now);
                 IDbCommand com = con.CreateCommand();
                 com.CommandText = sql;
