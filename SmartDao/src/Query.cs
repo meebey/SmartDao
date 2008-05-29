@@ -358,16 +358,24 @@ namespace Meebey.SmartDao
                 }
             }
             
-            // TODO: emulate LIMIT and OFFSET support if the RDBMS doesn't support it!
+            // only pass offet and/or limit parameter if the RDBMS actually supports it
+            int? limit = options.Limit;
+            if (!f_DatabaseManager.SqlProvider.HasLimitSupport) {
+                limit = null;
+            }
+            int? offset = options.Offset;
+            if (!f_DatabaseManager.SqlProvider.HasOffsetSupport) {
+                offset = null;
+            }
             IDbCommand cmd = f_DatabaseManager.CreateSelectCommand(f_TableName,
-                                                                  selectColumnNames,
-                                                                  whereColumnNames,
-                                                                  whereColumnOperators,
-                                                                  whereColumnValues,
-                                                                  orderByColumns,
-                                                                  orderByDirections,
-                                                                  options.Limit,
-                                                                  options.Offset);
+                                                                   selectColumnNames,
+                                                                   whereColumnNames,
+                                                                   whereColumnOperators,
+                                                                   whereColumnValues,
+                                                                   orderByColumns,
+                                                                   orderByDirections,
+                                                                   limit,
+                                                                   offset);
 #if LOG4NET
             _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
             DateTime start, stop;
@@ -379,11 +387,21 @@ namespace Meebey.SmartDao
                 _Logger.Debug("GetAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
 #endif
                 List<T> rows = new List<T>();
+                if (options.Offset != null && !f_DatabaseManager.SqlProvider.HasOffsetSupport) {
+#if LOG4NET
+                    _Logger.Debug("GetAll(): emulating offset of: " + options.Offset);
+#endif
+                    // RDBMS doesn't support OFFSET, so emulate it
+                    for (int i = 0; i < offset; i++) {
+                        reader.Read();
+                    }
+                }
                 while (reader.Read()) {
                     T row = new T();
                     rows.Add(row);
                     for (int i = 0; i < reader.FieldCount; i++) {
                         if (reader.IsDBNull(i)) {
+                            // don't need to set null values
                             continue;
                         }
                         
@@ -401,6 +419,16 @@ namespace Meebey.SmartDao
                         }
                         
                         property.SetValue(row, value, null);
+                    }
+                    
+                    if (options.Limit != null && !f_DatabaseManager.SqlProvider.HasLimitSupport) {
+                        // RDBMS doesn't support LIMIT, so emulate it
+                        if (rows.Count >= options.Limit) {
+#if LOG4NET
+                            _Logger.Debug("GetAll(): emulating limit of: " + options.Limit);
+#endif
+                            break;
+                        }
                     }
                 }
                 

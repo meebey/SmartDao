@@ -1,3 +1,7 @@
+2008-05-29   <> 
+
+	* src/Query.cs: Implemented emulation of LIMIT and OFFSET support.
+
 2008-05-23   <> 
 
 	* src/AnsiSqlProvider.cs: Fixed compile error with gmcs >= 1.9.1
