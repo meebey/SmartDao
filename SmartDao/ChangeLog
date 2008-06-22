@@ -1,5 +1,10 @@
 2008-06-22   <> 
 
+	* src/DatabaseManager.cs: CreateUpdateCommand(): added workaround for bug in
+	  Mono's Microsoft SQL client.
+
+2008-06-22   <> 
+
 	* src/Query.cs: GetAll(): don't emulate an offset of 0.
 	
 	  Add(), GetAll(), RemoveAll(): log parsed SQL query with parameter
