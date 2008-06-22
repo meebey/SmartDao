@@ -1,3 +1,13 @@
+2008-06-22   <> 
+
+	* src/Query.cs: GetAll(): don't emulate an offset of 0.
+	
+	  Add(), GetAll(), RemoveAll(): log parsed SQL query with parameter
+	  values.
+	
+	  ParseCommandParameters(): replace all command parameter variables with
+	  their actual values.
+
 2008-05-29   <> 
 
 	* src/Query.cs: Implemented emulation of LIMIT and OFFSET support.

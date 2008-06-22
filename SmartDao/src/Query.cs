@@ -95,6 +95,29 @@ namespace Meebey.SmartDao
 #endif
         }
         
+        private string ParseCommandParameters(IDbCommand cmd)
+        {
+            if (cmd == null) {
+                throw new ArgumentNullException("cmd");
+            }
+            
+            string parsed_sql = cmd.CommandText;
+            foreach (IDataParameter param in cmd.Parameters) {
+                string value;
+                if (param.Value is DBNull) {
+                    value = "NULL";
+                } else if (param.Value is string ||
+                           param.Value is DateTime) {
+                    value = String.Format("'{0}'", param.Value);
+                } else {
+                    value = param.Value.ToString();
+                }
+                parsed_sql = parsed_sql.Replace(param.ParameterName, value);
+            }
+            
+            return parsed_sql;
+        }
+        
         public IList<T> Add(IList<T> entry)
         {
             // TODO: implement multi-inserts here
@@ -126,6 +149,8 @@ namespace Meebey.SmartDao
             IDbCommand cmd = f_DatabaseManager.CreateInsertCommand(f_TableName, columnNames, columnValues);
 #if LOG4NET
             _Logger.Debug("Add(): SQL: " + cmd.CommandText);
+            _Logger.Debug("Add(): parsed SQL: " + ParseCommandParameters(cmd));
+            
             DateTime start, stop;
             start = DateTime.UtcNow;
 #endif
@@ -206,6 +231,8 @@ namespace Meebey.SmartDao
             IDbCommand cmd = f_DatabaseManager.CreateUpdateCommand(f_TableName, setColumnNames, setColumnValues, whereColumnNames, whereColumnOperators, whereColumnValues);
 #if LOG4NET
             _Logger.Debug("SetAll(): SQL: " + cmd.CommandText);
+            _Logger.Debug("SetAll(): parsed SQL: " + ParseCommandParameters(cmd));
+
             DateTime start, stop;
             start = DateTime.UtcNow;
 #endif
@@ -378,6 +405,8 @@ namespace Meebey.SmartDao
                                                                    offset);
 #if LOG4NET
             _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
+            _Logger.Debug("GetAll(): parsed SQL: " + ParseCommandParameters(cmd));
+            
             DateTime start, stop;
             start = DateTime.UtcNow;
 #endif
@@ -387,7 +416,8 @@ namespace Meebey.SmartDao
                 _Logger.Debug("GetAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
 #endif
                 List<T> rows = new List<T>();
-                if (options.Offset != null && !f_DatabaseManager.SqlProvider.HasOffsetSupport) {
+                if (options.Offset != null && options.Offset > 0 &&
+                    !f_DatabaseManager.SqlProvider.HasOffsetSupport) {
 #if LOG4NET
                     _Logger.Debug("GetAll(): emulating offset of: " + options.Offset);
 #endif
@@ -421,7 +451,8 @@ namespace Meebey.SmartDao
                         property.SetValue(row, value, null);
                     }
                     
-                    if (options.Limit != null && !f_DatabaseManager.SqlProvider.HasLimitSupport) {
+                    if (options.Limit != null &&
+                        !f_DatabaseManager.SqlProvider.HasLimitSupport) {
                         // RDBMS doesn't support LIMIT, so emulate it
                         if (rows.Count >= options.Limit) {
 #if LOG4NET
@@ -494,6 +525,8 @@ namespace Meebey.SmartDao
                                                                   whereColumnValues);
 #if LOG4NET
             _Logger.Debug("RemoveAll(): SQL: " + cmd.CommandText);
+            _Logger.Debug("RemoveAll(): parsed SQL: " + ParseCommandParameters(cmd));            
+            
             DateTime start, stop;
             start = DateTime.UtcNow;
 #endif
