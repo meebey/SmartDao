@@ -328,6 +328,12 @@ namespace Meebey.SmartDao
                 object value = whereColumnValues[idx];
                 DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 
+                // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
+                if (_DBConnection is System.Data.SqlClient.SqlConnection &&
+                    value is DateTime) {
+                    value = ((DateTime) value).ToString("s");
+                }
+                
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
                 parameter.DbType = dbType;
@@ -379,6 +385,12 @@ namespace Meebey.SmartDao
                     object value = whereColumnValues[idx];
                     DbType dbType = _SqlProvider.GetDBType(value.GetType());
                     
+                    // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
+                    if (_DBConnection is System.Data.SqlClient.SqlConnection &&
+                        value is DateTime) {
+                        value = ((DateTime) value).ToString("s");
+                    }
+                    
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = parameterName;
                     parameter.DbType = dbType;
@@ -429,6 +441,12 @@ namespace Meebey.SmartDao
                                                          idx);
                     object value = whereColumnValues[idx];
                     DbType dbType = _SqlProvider.GetDBType(value.GetType());
+                    
+                    // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
+                    if (_DBConnection is System.Data.SqlClient.SqlConnection &&
+                        value is DateTime) {
+                        value = ((DateTime) value).ToString("s");
+                    }
                     
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = parameterName;

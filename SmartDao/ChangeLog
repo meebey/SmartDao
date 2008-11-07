@@ -1,3 +1,13 @@
+2008-11-07   <> 
+
+	* src/AnsiSqlProvider.cs: Check for ( and ) when checking for function calls
+	  in CreateSelectStatement().
+	
+	  Fixed spacing in front of WHERE in CreateDeleteStatement().
+	* src/DatabaseManager.cs: Added DateTime hack for SqlClient (MSSQL) to WHERE
+	  parameter passing, as DateTime could be party of the primary key.
+	* src/Query.cs: Implemented GetFirst(template, selectColumns) overload.
+
 2008-08-05  Mirco Bauer <meebey@meebey.net> 
 
 	* src/MySqlProvider.cs: Fixed creating table using the InnoDB engine.

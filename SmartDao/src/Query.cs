@@ -285,6 +285,13 @@ namespace Meebey.SmartDao
             return res[0];
         }
         
+        public GetFirst(T template, params string[] selectColumns)
+        {
+            GetOptions options = new GetOptions();
+            options.SelectFields = selectColumns;
+            return GetFirst(template, options);
+        }
+        
         /*
         public int GetCount(T template, GetOptions options)
         {
@@ -385,7 +392,7 @@ namespace Meebey.SmartDao
                 }
             }
             
-            // only pass offet and/or limit parameter if the RDBMS actually supports it
+            // only pass offset and/or limit parameter if the RDBMS actually supports it
             int? limit = options.Limit;
             if (!f_DatabaseManager.SqlProvider.HasLimitSupport) {
                 limit = null;

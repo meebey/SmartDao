@@ -341,8 +341,8 @@ namespace Meebey.SmartDao
             if (selectColumnNames != null && selectColumnNames.Count > 0) {
                 for (int idx = 0; idx < selectColumnNames.Count; idx++) {
                     string name = selectColumnNames[idx];
-                    if (name == "*" || name.EndsWith(")")) {
-                        // don't quote "*" or function calls
+                    if (name == "*" || (name.Contains("/") && name.EndsWith(")"))) {
+                        // don't quote "*" and function calls
                         sql.AppendFormat("{0}, ", name);
                     } else {
                         sql.AppendFormat("{0}, ", GetColumnName(name));
@@ -472,12 +472,12 @@ namespace Meebey.SmartDao
             StringBuilder sql = new StringBuilder("DELETE FROM ");
             sql.Append(GetTableName(tableName));
             if (whereClause != null) {
-                sql.AppendFormat("WHERE {0}", whereClause);
+                sql.AppendFormat(" WHERE {0}", whereClause);
             }
             
             return sql.ToString();
         }
-    
+        
         public virtual string CreateDeleteStatement(string tableName,
                                                     IList<string> whereColumnNames,
                                                     IList<string> whereColumnOperators,
