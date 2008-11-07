@@ -285,7 +285,7 @@ namespace Meebey.SmartDao
             return res[0];
         }
         
-        public GetFirst(T template, params string[] selectColumns)
+        public T GetFirst(T template, params string[] selectColumns)
         {
             GetOptions options = new GetOptions();
             options.SelectFields = selectColumns;

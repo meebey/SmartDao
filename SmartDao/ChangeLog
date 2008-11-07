@@ -1,5 +1,9 @@
 2008-11-07   <> 
 
+	* src/Query.cs: Fixed return type.
+
+2008-11-07   <> 
+
 	* src/AnsiSqlProvider.cs: Check for ( and ) when checking for function calls
 	  in CreateSelectStatement().
 	
