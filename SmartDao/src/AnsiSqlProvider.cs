@@ -341,7 +341,7 @@ namespace Meebey.SmartDao
             if (selectColumnNames != null && selectColumnNames.Count > 0) {
                 for (int idx = 0; idx < selectColumnNames.Count; idx++) {
                     string name = selectColumnNames[idx];
-                    if (name == "*" || (name.Contains("/") && name.EndsWith(")"))) {
+                    if (name == "*" || (name.Contains("(") && name.EndsWith(")"))) {
                         // don't quote "*" and function calls
                         sql.AppendFormat("{0}, ", name);
                     } else {
