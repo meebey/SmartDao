@@ -1,3 +1,9 @@
+2008-11-24   <> 
+
+	* src/AssemblyInfo.cs: Bumped version to 0.1.0.0
+	* src/DatabaseManager.cs: Fixed DbType with DateTime when using the MSSQL
+	  client (SqlClient).
+
 2008-11-07   <> 
 
 	* src/AnsiSqlProvider.cs: Fixed function check.

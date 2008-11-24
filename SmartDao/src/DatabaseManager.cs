@@ -311,7 +311,6 @@ namespace Meebey.SmartDao
                 }
                 
                 DbType dbType = _SqlProvider.GetDBType(value.GetType());
-                
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
                 parameter.DbType = dbType;
@@ -326,7 +325,6 @@ namespace Meebey.SmartDao
                                                      _SqlProvider.GetParameterCharacter(),
                                                      setColumnValues.Count + idx);
                 object value = whereColumnValues[idx];
-                DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 
                 // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
                 if (_DBConnection is System.Data.SqlClient.SqlConnection &&
@@ -334,6 +332,7 @@ namespace Meebey.SmartDao
                     value = ((DateTime) value).ToString("s");
                 }
                 
+                DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
                 parameter.DbType = dbType;
@@ -383,7 +382,6 @@ namespace Meebey.SmartDao
                 for (int idx = 0; idx < whereColumnNames.Count; idx++) {
                     string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
                     object value = whereColumnValues[idx];
-                    DbType dbType = _SqlProvider.GetDBType(value.GetType());
                     
                     // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
                     if (_DBConnection is System.Data.SqlClient.SqlConnection &&
@@ -391,6 +389,7 @@ namespace Meebey.SmartDao
                         value = ((DateTime) value).ToString("s");
                     }
                     
+                    DbType dbType = _SqlProvider.GetDBType(value.GetType());
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = parameterName;
                     parameter.DbType = dbType;
@@ -440,7 +439,6 @@ namespace Meebey.SmartDao
                                                          _SqlProvider.GetParameterCharacter(),
                                                          idx);
                     object value = whereColumnValues[idx];
-                    DbType dbType = _SqlProvider.GetDBType(value.GetType());
                     
                     // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
                     if (_DBConnection is System.Data.SqlClient.SqlConnection &&
@@ -448,6 +446,7 @@ namespace Meebey.SmartDao
                         value = ((DateTime) value).ToString("s");
                     }
                     
+                    DbType dbType = _SqlProvider.GetDBType(value.GetType());
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = parameterName;
                     parameter.DbType = dbType;
