@@ -25,7 +25,7 @@ namespace Meebey.SmartDao
                 return _DBConnection;
             }
         }
-        
+
         public DatabaseManager(IDbConnection dbConnection) : this(dbConnection, null)
         {
         }
@@ -42,39 +42,54 @@ namespace Meebey.SmartDao
             } else {
                 _SqlProvider = sqlProvider;
             }
+
+            try {
+                string versionSql = _SqlProvider.CreateSelectVersionStatement();
+                if (!String.IsNullOrEmpty(versionSql)) {
+                    using (IDbCommand com = _DBConnection.CreateCommand()) {
+                        com.CommandText = versionSql;
+                        object res = com.ExecuteScalar();
+                        if (res is string) {
+                            _SqlProvider.VersionString = (string) res;
+                        }
+                    }
+                }
+            } catch {
+            }
         }
-        
+
         public void InitTables(Assembly assembly)
         {
             if (assembly == null) {
                 throw new ArgumentNullException("assembly");
             }
-            
+
             Type[] types = assembly.GetTypes();
             foreach (Type type in types) {
                 object[] attrs = type.GetCustomAttributes(typeof(TableAttribute), true);
                 if (attrs == null || attrs.Length == 0) {
-                    continue; 
+                    continue;
                 }
-                
+
                 TableAttribute attr = (TableAttribute) attrs[0];
                 InitTable(type, attr);
             }
         }
-        
+
         public void EmptyTable(Type tableType)
         {
             if (tableType == null) {
                 throw new ArgumentNullException("tableType");
             }
-            
+
             string sql = _SqlProvider.CreateDeleteStatement(GetTableName(tableType), null);
 #if LOG4NET
             _Logger.Debug("EmptyTable(): SQL: " + sql);
 #endif
-            IDbCommand com = _DBConnection.CreateCommand();
-            com.CommandText = sql;
-            com.ExecuteNonQuery();
+            using (IDbCommand com = _DBConnection.CreateCommand()) {
+                com.CommandText = sql;
+                com.ExecuteNonQuery();
+            }
         }
         
         public void DropTable(Type tableType)
@@ -87,9 +102,10 @@ namespace Meebey.SmartDao
 #if LOG4NET
             _Logger.Debug("DropTable(): SQL: " + sql);
 #endif
-            IDbCommand com = _DBConnection.CreateCommand();
-            com.CommandText = sql;
-            com.ExecuteNonQuery();
+            using (IDbCommand com = _DBConnection.CreateCommand()) {
+                com.CommandText = sql;
+                com.ExecuteNonQuery();
+            }
         }
         
         public void CreateTable(Type tableType)
@@ -106,7 +122,7 @@ namespace Meebey.SmartDao
             TableAttribute attr = (TableAttribute) attrs[0];
             CreateTable(tableType, attr);
         }
-        
+
         private void CreateTable(Type tableType, TableAttribute tableAttribute)
         {
             if (tableType == null) {
@@ -158,9 +174,10 @@ namespace Meebey.SmartDao
 #if LOG4NET
             _Logger.Debug("CreateTable(): SQL: " + sql);
 #endif
-            IDbCommand com = _DBConnection.CreateCommand();
-            com.CommandText = sql;
-            com.ExecuteNonQuery();
+            using (IDbCommand com = _DBConnection.CreateCommand()) {
+                com.CommandText = sql;
+                com.ExecuteNonQuery();
+            }
         }
         
         public void InitTable(Type tableType)
@@ -210,24 +227,25 @@ namespace Meebey.SmartDao
 #if LOG4NET
             _Logger.Debug("TableExists(): SQL: " + sql);
 #endif
-            IDbCommand com = _DBConnection.CreateCommand();
-            com.CommandText = sql;
-            
-            object res = com.ExecuteScalar();
-            if (res is Int32) {
-                return (Int32) res > 0; 
-            } else if (res is Int64) {
-                return (Int64) res > 0;
+            using (IDbCommand com = _DBConnection.CreateCommand()) {
+                com.CommandText = sql;
+
+                object res = com.ExecuteScalar();
+                if (res is Int32) {
+                    return (Int32) res > 0;
+                } else if (res is Int64) {
+                    return (Int64) res > 0;
+                }
+
+                throw new NotSupportedException("Unsupported type returned by COUNT(*): " + res.GetType());
             }
-            
-            throw new NotSupportedException("Unsupported type returned by COUNT(*): " + res.GetType());
         }
         
         public virtual Query<T> CreateQuery<T>() where T : new()
         {
             return new Query<T>(this);
         }
-        
+
         public virtual IDbCommand CreateInsertCommand(string tableName,
                                                       IList<string> columnNames,
                                                       IList<object> columnValues)
@@ -241,19 +259,19 @@ namespace Meebey.SmartDao
             if (columnValues == null) {
                 throw new ArgumentNullException("columnValues");
             }
-            
+
             IDbCommand command = _DBConnection.CreateCommand();
             List<string> parameterNames = new List<string>();
             for (int idx = 0; idx < columnValues.Count; idx++) {
                 string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
                 object value = columnValues[idx];
-                
+
                 // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
                 if (_DBConnection is System.Data.SqlClient.SqlConnection &&
                     value is DateTime) {
                     value = ((DateTime) value).ToString("s");
                 }
-                
+
                 DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
@@ -309,7 +327,7 @@ namespace Meebey.SmartDao
                     value is DateTime) {
                     value = ((DateTime) value).ToString("s");
                 }
-                
+
                 DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
@@ -318,20 +336,20 @@ namespace Meebey.SmartDao
                 command.Parameters.Add(parameter);
                 setParameterNames.Add(parameterName);
             }
-            
+
             List<string> whereParameterNames = new List<string>(whereColumnValues.Count);
             for (int idx = 0; idx < whereColumnNames.Count; idx++) {
                 string parameterName = String.Format("{0}{1}",
                                                      _SqlProvider.GetParameterCharacter(),
                                                      setColumnValues.Count + idx);
                 object value = whereColumnValues[idx];
-                
+
                 // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
                 if (_DBConnection is System.Data.SqlClient.SqlConnection &&
                     value is DateTime) {
                     value = ((DateTime) value).ToString("s");
                 }
-                
+
                 DbType dbType = _SqlProvider.GetDBType(value.GetType());
                 IDbDataParameter parameter = command.CreateParameter();
                 parameter.ParameterName = parameterName;
@@ -340,7 +358,7 @@ namespace Meebey.SmartDao
                 command.Parameters.Add(parameter);
                 whereParameterNames.Add(parameterName);
             }
-            
+
             string sql = _SqlProvider.CreateUpdateStatement(tableName,
                                                             setColumnNames,
                                                             setParameterNames,
@@ -350,7 +368,7 @@ namespace Meebey.SmartDao
             command.CommandText = sql;
             return command;
         }
-        
+
         public virtual IDbCommand CreateSelectCommand(string tableName,
                                                       IList<string> selectColumnNames,
                                                       IList<string> whereColumnNames,
@@ -364,7 +382,7 @@ namespace Meebey.SmartDao
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
             }
-            
+
             if (whereColumnNames != null &&
                 whereColumnOperators != null &&
                 whereColumnValues != null) {
@@ -373,22 +391,21 @@ namespace Meebey.SmartDao
                     throw new ArgumentException("whereColumnNames, whereColumnOperators and whereColumnValues must have the same size.");
                 }
             }
-            
+
             IDbCommand command = _DBConnection.CreateCommand();
-            
             List<string> parameterNames = null;
             if (whereColumnNames != null) {
                 parameterNames = new List<string>(whereColumnNames.Count);
                 for (int idx = 0; idx < whereColumnNames.Count; idx++) {
                     string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
                     object value = whereColumnValues[idx];
-                    
+
                     // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
                     if (_DBConnection is System.Data.SqlClient.SqlConnection &&
                         value is DateTime) {
                         value = ((DateTime) value).ToString("s");
                     }
-                    
+
                     DbType dbType = _SqlProvider.GetDBType(value.GetType());
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = parameterName;
@@ -398,7 +415,7 @@ namespace Meebey.SmartDao
                     parameterNames.Add(parameterName);
                 }
             }
-            
+
             string sql = _SqlProvider.CreateSelectStatement(null, tableName,
                                                             selectColumnNames,
                                                             whereColumnNames,
@@ -411,7 +428,7 @@ namespace Meebey.SmartDao
             command.CommandText = sql;
             return command;
         }
-        
+
         public virtual IDbCommand CreateDeleteCommand(string tableName,
                                                       IList<string> whereColumnNames,
                                                       IList<string> whereColumnOperators,
@@ -429,7 +446,7 @@ namespace Meebey.SmartDao
                     throw new ArgumentException("whereColumnNames, whereColumnOperators and whereColumnValues must have the same size.");
                 }
             }
-            
+
             IDbCommand command = _DBConnection.CreateCommand();
             List<string> whereParameterNames = null;
             if (whereColumnNames != null && whereColumnNames.Count > 0) {
@@ -439,13 +456,13 @@ namespace Meebey.SmartDao
                                                          _SqlProvider.GetParameterCharacter(),
                                                          idx);
                     object value = whereColumnValues[idx];
-                    
+
                     // HACK: SqlConnection of Mono 1.2.6 and 1.9.1 sends DateTime incorrectly as varchar
                     if (_DBConnection is System.Data.SqlClient.SqlConnection &&
                         value is DateTime) {
                         value = ((DateTime) value).ToString("s");
                     }
-                    
+
                     DbType dbType = _SqlProvider.GetDBType(value.GetType());
                     IDbDataParameter parameter = command.CreateParameter();
                     parameter.ParameterName = parameterName;
@@ -455,7 +472,7 @@ namespace Meebey.SmartDao
                     whereParameterNames.Add(parameterName);
                 }
             }
-            
+
             string sql = _SqlProvider.CreateDeleteStatement(tableName,
                                                             whereColumnNames,
                                                             whereColumnOperators,
@@ -463,7 +480,7 @@ namespace Meebey.SmartDao
             command.CommandText = sql;
             return command;
         }
-        
+
         public virtual string GetTableName(Type tableType)
         {
             if (tableType == null) {

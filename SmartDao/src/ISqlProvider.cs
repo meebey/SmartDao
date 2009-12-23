@@ -12,6 +12,14 @@ namespace Meebey.SmartDao
         bool HasOffsetSupport {
             get;
         }
+        string VersionString {
+            get;
+            set;
+        }
+        Version Version {
+            get;
+            set;
+        }
 
         string GetDataTypeName(DbType dbType);
         DbType GetDBType(Type type);
@@ -21,6 +29,8 @@ namespace Meebey.SmartDao
         string GetStatementSeparator();
         string GetParameterCharacter();
 
+        string CreateSelectVersionStatement();
+
         string CreateTableExistsStatement(string tableName);
         string CreateCreateTableStatement(string tableName,
                                           IList<string> columnNames,
@@ -29,7 +39,13 @@ namespace Meebey.SmartDao
                                           IList<bool?> columnIsNullables,
                                           IList<string> primaryKeys);
         string CreateDropTableStatement(string tableName);
-        
+        /*
+        string CreateSequenceStatement(string tableName,
+                                       string columnName,
+                                       int seed,
+                                       int increment);
+        */
+
         string CreateInsertStatement(string tableName,
                                      IList<string> columnNames,
                                      IList<string> columnValues);

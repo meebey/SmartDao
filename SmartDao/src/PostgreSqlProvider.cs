@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Collections.Generic;
 
 namespace Meebey.SmartDao
@@ -12,13 +13,27 @@ namespace Meebey.SmartDao
                 return true;
             }
         }
-        
+
         public override bool HasOffsetSupport {
             get {
                 return true;
             }
         }
-        
+
+        public override string VersionString {
+            get {
+                return base.VersionString;
+            }
+            set {
+                base.VersionString = value;
+                // PostgreSQL 8.1.18 on i486-pc-linux-gnu, compiled by GCC cc (GCC) 4.1.2 20061115 (prerelease) (Debian 4.1.1-21)
+                Match match = Regex.Match(value, @"^\w+\s+([0-9\.])");
+                if (match.Success && match.Groups.Count > 1) {
+                    Version = new Version(match.Groups[2].Value);
+                }
+            }
+        }
+
         public PostgreSqlProvider()
         {
         }
@@ -81,15 +96,35 @@ namespace Meebey.SmartDao
             if (limit == null) {
                 return sql;
             }
-            
+
             StringBuilder limitClause;
             limitClause = new StringBuilder(25); // LIMIT + OFFSET + 2 * 3 digits
             limitClause.AppendFormat(" LIMIT {0}", limit);
             if (offset != null) {
                 limitClause.AppendFormat(" OFFSET {0}", offset);
             }
-            
+
             return sql + limitClause.ToString();
         }
-    }
+
+        public override string CreateSelectVersionStatement()
+        {
+            return "SELECT VERSION()";
+        }
+
+        public override string CreateInsertStatement(string tableName,
+                                                     IList<string> columnNames,
+                                                     IList<string> columnValues)
+        {
+            string sql = base.CreateInsertStatement(tableName,
+                                                    columnNames,
+                                                    columnValues);
+
+            if (Version != null && Version >= new Version("8.4")) {
+                sql += " RETURNING *";
+            }
+
+            return sql;
+        }
+   }
 }

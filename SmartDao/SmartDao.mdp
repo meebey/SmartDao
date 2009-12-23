@@ -1,50 +1,52 @@
-<Project name="SmartDao" fileversion="2.0" DefaultNamespace="Meebey.SmartDao" language="C#" clr-version="Net_2_0" ctype="DotNetProject">
+<Project name="SmartDao" fileversion="2.0" DefaultNamespace="Meebey.SmartDao" language="C#" clr-version="Net_2_0" targetFramework="2.0" ctype="DotNetProject">
   <Configurations active="Debug">
     <Configuration name="Debug" ctype="DotNetProjectConfiguration">
-      <Output directory="../bin/debug" assemblyKeyFile="." assembly="Meebey.SmartDao" />
+      <Output directory="../bin/debug" assembly="Meebey.SmartDao" assemblyKeyFile="." />
       <Build debugmode="True" target="Library" />
-      <Execution runwithwarnings="True" externalconsole="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
-      <CodeGeneration compiler="Mcs" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" definesymbols="DEBUG,TRACE,LOG4NET" generatexmldocumentation="False" win32Icon="." ctype="CSharpCompilerParameters" />
+      <Execution consolepause="True" externalconsole="True" runwithwarnings="True" runtime="MsNet" clr-version="Net_2_0" />
+      <CodeGeneration compiler="Mcs" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" definesymbols="DEBUG,TRACE,LOG4NET" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
     </Configuration>
     <Configuration name="Release" ctype="DotNetProjectConfiguration">
-      <Output directory="../bin/release" assemblyKeyFile="." assembly="Meebey.SmartDao" />
+      <Output directory="../bin/release" assembly="Meebey.SmartDao" assemblyKeyFile="." />
       <Build debugmode="False" target="Library" />
-      <Execution runwithwarnings="True" externalconsole="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
-      <CodeGeneration compiler="Mcs" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" generatexmldocumentation="False" win32Icon="." ctype="CSharpCompilerParameters" />
+      <Execution consolepause="True" externalconsole="True" runwithwarnings="True" runtime="MsNet" clr-version="Net_2_0" />
+      <CodeGeneration compiler="Mcs" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
     </Configuration>
   </Configurations>
   <Contents>
-    <File name="src" subtype="Directory" buildaction="Compile" />
-    <File name="src/AnsiSqlProvider.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/AssemblyInfo.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/ColumnAttribute.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/DatabaseManager.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/ForeignKeyAttribute.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/GetOptions.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/IndexAttribute.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/ISqlProvider.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/MicrosoftSqlProvider.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/MySqlProvider.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/PostgreSqlProvider.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/PrimaryKeyAttribute.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/Query.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/SqliteProvider.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/TableAttribute.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/UniqueAttribute.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/OrderByDirection.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/DatabaseUri.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/SmartDaoException.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/MissingPrimaryKeyException.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/DataNotFoundException.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/TooMuchDataException.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/TooMuchDataFoundException.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/TooMuchDataUpdatedException.cs" subtype="Code" buildaction="Compile" />
-    <File name="src/TooMuchDataRemovedException.cs" subtype="Code" buildaction="Compile" />
+    <File subtype="Directory" buildaction="Compile" name="src" />
+    <File subtype="Code" buildaction="Compile" name="src/AnsiSqlProvider.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/AssemblyInfo.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/ColumnAttribute.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/DatabaseManager.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/ForeignKeyAttribute.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/GetOptions.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/IndexAttribute.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/ISqlProvider.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/MicrosoftSqlProvider.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/MySqlProvider.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/PostgreSqlProvider.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/PrimaryKeyAttribute.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/Query.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/SqliteProvider.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/TableAttribute.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/UniqueAttribute.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/OrderByDirection.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/DatabaseUri.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/SmartDaoException.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/MissingPrimaryKeyException.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/DataNotFoundException.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/TooMuchDataException.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/TooMuchDataFoundException.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/TooMuchDataUpdatedException.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/TooMuchDataRemovedException.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/DBNullable.cs" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
     <ProjectReference type="Gac" localcopy="True" refto="log4net, Version=1.2.9.0, Culture=neutral, PublicKeyToken=a5715cc6d5c3540b" />
     <ProjectReference type="Gac" localcopy="True" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   </References>
+  <LanguageParameters ApplicationIcon="." ctype="CSharpProjectParameters" />
   <Deployment.LinuxDeployData generatePcFile="False" />
 </Project>

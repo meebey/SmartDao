@@ -7,39 +7,59 @@ namespace Meebey.SmartDao
 {
     public class AnsiSqlProvider : ISqlProvider
     {
-        private static IDictionary<Type, DbType> _SupportedCliTypes;
-        
+        private static IDictionary<Type, DbType> f_SupportedCliTypes;
+        private string  f_VersionString;
+        private Version f_Version;
+
         public virtual bool HasLimitSupport {
             get {
                 return false;
             }
         }
-        
+
         public virtual bool HasOffsetSupport {
             get {
                 return false;
             }
         }
-        
+
+        public virtual string VersionString {
+            get {
+                return f_VersionString;
+            }
+            set {
+                f_VersionString = value;
+            }
+        }
+
+        public virtual Version Version {
+            get {
+                return f_Version;
+            }
+            set {
+                f_Version = value;
+            }
+        }
+
         static AnsiSqlProvider() {
-            _SupportedCliTypes = new Dictionary<Type, DbType>(9);
-            _SupportedCliTypes.Add(typeof(String),    DbType.String);
-            _SupportedCliTypes.Add(typeof(Boolean),   DbType.Boolean);
-            _SupportedCliTypes.Add(typeof(Boolean?),  DbType.Boolean);
-            _SupportedCliTypes.Add(typeof(Int16),     DbType.Int16);
-            _SupportedCliTypes.Add(typeof(Int16?),    DbType.Int16);
-            _SupportedCliTypes.Add(typeof(Int32),     DbType.Int32);
-            _SupportedCliTypes.Add(typeof(Int32?),    DbType.Int32);
-            _SupportedCliTypes.Add(typeof(Int64),     DbType.Int64);
-            _SupportedCliTypes.Add(typeof(Int64?),    DbType.Int64);
-            _SupportedCliTypes.Add(typeof(Single),    DbType.Single);
-            _SupportedCliTypes.Add(typeof(Single?),   DbType.Single);
-            _SupportedCliTypes.Add(typeof(Double),    DbType.Double);
-            _SupportedCliTypes.Add(typeof(Double?),   DbType.Double);
-            _SupportedCliTypes.Add(typeof(Decimal),   DbType.Decimal);
-            _SupportedCliTypes.Add(typeof(Decimal?),  DbType.Decimal);
-            _SupportedCliTypes.Add(typeof(DateTime),  DbType.DateTime);
-            _SupportedCliTypes.Add(typeof(DateTime?), DbType.DateTime);
+            f_SupportedCliTypes = new Dictionary<Type, DbType>(9);
+            f_SupportedCliTypes.Add(typeof(String),    DbType.String);
+            f_SupportedCliTypes.Add(typeof(Boolean),   DbType.Boolean);
+            f_SupportedCliTypes.Add(typeof(Boolean?),  DbType.Boolean);
+            f_SupportedCliTypes.Add(typeof(Int16),     DbType.Int16);
+            f_SupportedCliTypes.Add(typeof(Int16?),    DbType.Int16);
+            f_SupportedCliTypes.Add(typeof(Int32),     DbType.Int32);
+            f_SupportedCliTypes.Add(typeof(Int32?),    DbType.Int32);
+            f_SupportedCliTypes.Add(typeof(Int64),     DbType.Int64);
+            f_SupportedCliTypes.Add(typeof(Int64?),    DbType.Int64);
+            f_SupportedCliTypes.Add(typeof(Single),    DbType.Single);
+            f_SupportedCliTypes.Add(typeof(Single?),   DbType.Single);
+            f_SupportedCliTypes.Add(typeof(Double),    DbType.Double);
+            f_SupportedCliTypes.Add(typeof(Double?),   DbType.Double);
+            f_SupportedCliTypes.Add(typeof(Decimal),   DbType.Decimal);
+            f_SupportedCliTypes.Add(typeof(Decimal?),  DbType.Decimal);
+            f_SupportedCliTypes.Add(typeof(DateTime),  DbType.DateTime);
+            f_SupportedCliTypes.Add(typeof(DateTime?), DbType.DateTime);
         }
         
         public AnsiSqlProvider()
@@ -79,7 +99,7 @@ namespace Meebey.SmartDao
         public virtual DbType GetDBType(Type type)
         {
             DbType res;
-            if (!_SupportedCliTypes.TryGetValue(type, out res)) { 
+            if (!f_SupportedCliTypes.TryGetValue(type, out res)) { 
                 throw new NotSupportedException("Type is not supported: " + type);
             }
             return res;
@@ -112,7 +132,12 @@ namespace Meebey.SmartDao
         {
             return "@";
         }
-        
+
+        public virtual string CreateSelectVersionStatement()
+        {
+            return null;
+        }
+
         public virtual string CreateCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool?> columnIsNullables, IList<string> primaryKeys)
         {
             if (tableName == null) {
@@ -152,7 +177,7 @@ namespace Meebey.SmartDao
                     throw new NotSupportedException("Value type: " + type + " must be nullable for column: " + name);
                 }
                 
-                if (!_SupportedCliTypes.ContainsKey(type)) {
+                if (!f_SupportedCliTypes.ContainsKey(type)) {
                     throw new NotSupportedException("Unsupported column data type: " + type);
                 }
                 
@@ -194,7 +219,7 @@ namespace Meebey.SmartDao
             sql.Append(")");
             return sql.ToString();
         }
-        
+
         public virtual string CreateInsertStatement(string tableName, IList<string> columnNames, IList<string> columnValues)
         {
             if (tableName == null) {
@@ -510,7 +535,7 @@ namespace Meebey.SmartDao
             return CreateDeleteStatement(tableName,
                                          whereClause != null ? whereClause.ToString() : null);
         }
-        
+
         private static bool IsNullableType(Type type)
         {
             if (type == null) {

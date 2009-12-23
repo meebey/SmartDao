@@ -117,19 +117,62 @@ namespace Meebey.SmartDao
             
             return parsed_sql;
         }
-        
+
+        private T CreateDBObject(IDataReader reader)
+        {
+            T row = new T();
+            for (int i = 0; i < reader.FieldCount; i++) {
+                if (reader.IsDBNull(i)) {
+                    // don't need to set null values
+                    continue;
+                }
+    
+                string name = reader.GetName(i);
+                object value = reader.GetValue(i);
+
+                SetPropertyValue(row, name, value);
+            }
+
+            return row;
+        }
+
+        private void SetPropertyValue(T row, string propertyName, object propertyValue)
+        {
+            if (row == null) {
+                throw new ArgumentNullException("row");
+            }
+            if (propertyName == null) {
+                throw new ArgumentNullException("propertyName");
+            }
+            if (propertyValue == null) {
+                throw new ArgumentNullException("propertyValue");
+            }
+
+            PropertyInfo property;
+            if (!f_ColumnToProperties.TryGetValue(propertyName, out property)) {
+                throw new InvalidOperationException("Property for column could not be found: " + propertyName);
+            }
+            if (!property.PropertyType.IsAssignableFrom(propertyValue.GetType())) {
+                throw new InvalidOperationException(
+                            String.Format("Property type: {0} of {1} doesn't match column type: {2} for column: {3}",
+                                          property.PropertyType, row.GetType() , propertyValue.GetType(), propertyName));
+            }
+
+            property.SetValue(row, propertyValue, null);
+        }
+
         public IList<T> Add(IList<T> entry)
         {
             // TODO: implement multi-inserts here
             throw new NotImplementedException();
         }
-        
+
         public T Add(T entry)
         {
             if (entry == null) {
                 throw new ArgumentNullException("entry");
             }
-            
+
             InitFields();
             
             List<string> columnNames  = new List<string>(f_ColumnToProperties.Count);
@@ -145,30 +188,65 @@ namespace Meebey.SmartDao
                 columnNames.Add(columnName);
                 columnValues.Add(value);
             }
-            
-            IDbCommand cmd = f_DatabaseManager.CreateInsertCommand(f_TableName, columnNames, columnValues);
+
+            bool isPkNull = false;
+            string pkName = null;
+            foreach (string pkColumn in f_PrimaryKeyColumns) {
+                PropertyInfo property = f_ColumnToProperties[pkColumn];
+
+                object value = property.GetValue(entry, null);
+                if (value == null) {
+                    isPkNull = true;
+                    break;
+                }
+                pkName = pkColumn;
+            }
+
+            using (IDbCommand cmd = f_DatabaseManager.CreateInsertCommand(
+                                        f_TableName,
+                                        columnNames,
+                                        columnValues)) {
 #if LOG4NET
-            _Logger.Debug("Add(): SQL: " + cmd.CommandText);
-            _Logger.Debug("Add(): parsed SQL: " + ParseCommandParameters(cmd));
-            
-            DateTime start, stop;
-            start = DateTime.UtcNow;
+                _Logger.Debug("Add(): SQL: " + cmd.CommandText);
+                _Logger.Debug("Add(): parsed SQL: " + ParseCommandParameters(cmd));
+
+                DateTime start, stop;
+                start = DateTime.UtcNow;
 #endif
-            cmd.ExecuteNonQuery();
+
+                object pkValue = null;
+                T pkEntry = new T();
+                if (isPkNull) {
+                    // looks like this table uses auto generated keys
+                    // TODO: an explicit attribute for this would be much nicer!
+                    using (IDataReader reader = cmd.ExecuteReader()) {
+                        // try to obtain the generated key and write it back
+                        if (reader.NextResult() && reader.Read()) {
+                            pkValue = reader.GetValue(0);
+                        } else {
+                            throw new DataNotFoundException("Couldnt't obtain auto-generated key from INSERT");
+                        }
+                    }
+                } else {
+                    cmd.ExecuteNonQuery();
+                    // TODO: read PK value from entry and set pkValue
+                }
+                SetPropertyValue(pkEntry, pkName, pkValue);
+
 #if LOG4NET
-            stop = DateTime.UtcNow;
-            _Logger.Debug("Add(): query took: " + (stop - start).TotalMilliseconds + " ms");
+                stop = DateTime.UtcNow;
+                _Logger.Debug("Add(): query took: " + (stop - start).TotalMilliseconds + " ms");
 #endif
-            // TODO: copy pk into a fresh object
-            return entry;
+                return pkEntry;
+            }
         }
-        
+
         public void SetSingle(T record)
         {
             if (record == null) {
                 throw new ArgumentNullException("record");
             }
-            
+
             InitFields();
 
             foreach (string pkColumn in f_PrimaryKeyColumns) {
@@ -179,7 +257,7 @@ namespace Meebey.SmartDao
                     throw new MissingPrimaryKeyException("Property: " + property.Name + " must not be null.");
                 }
             }
-            
+
             int res = SetAll(record);
             if (res == 0) {
                 throw new DataNotFoundException();
@@ -188,14 +266,14 @@ namespace Meebey.SmartDao
                 throw new TooMuchDataUpdatedException();
             }
         }
-        
+
         /*
         public int SetAll(T template, T value)
         {
             // support update of PK
         }
         */
-        
+
         public int SetAll(T entry)
         {
             if (entry == null) {
@@ -228,31 +306,38 @@ namespace Meebey.SmartDao
                 }
             }
             
-            IDbCommand cmd = f_DatabaseManager.CreateUpdateCommand(f_TableName, setColumnNames, setColumnValues, whereColumnNames, whereColumnOperators, whereColumnValues);
+            using (IDbCommand cmd = f_DatabaseManager.CreateUpdateCommand(
+                                        f_TableName,
+                                        setColumnNames,
+                                        setColumnValues,
+                                        whereColumnNames,
+                                        whereColumnOperators,
+                                        whereColumnValues)) {
 #if LOG4NET
-            _Logger.Debug("SetAll(): SQL: " + cmd.CommandText);
-            _Logger.Debug("SetAll(): parsed SQL: " + ParseCommandParameters(cmd));
-
-            DateTime start, stop;
-            start = DateTime.UtcNow;
+                _Logger.Debug("SetAll(): SQL: " + cmd.CommandText);
+                _Logger.Debug("SetAll(): parsed SQL: " + ParseCommandParameters(cmd));
+    
+                DateTime start, stop;
+                start = DateTime.UtcNow;
 #endif
-            int res = cmd.ExecuteNonQuery();
+                int res = cmd.ExecuteNonQuery();
 #if LOG4NET
-            _Logger.Debug("SetAll(): affected rows: " + res);
-            stop = DateTime.UtcNow;
-            _Logger.Debug("SetAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
+                _Logger.Debug("SetAll(): affected rows: " + res);
+                stop = DateTime.UtcNow;
+                _Logger.Debug("SetAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
 #endif
-            return res;
+                return res;
+            }
         }
-        
+
         public T GetSingle(T template, params string[] selectColumns)
         {
             if (template == null) {
                 throw new ArgumentNullException("template");
             }
-            
+
             InitFields();
-            
+
             foreach (string pkColumn in f_PrimaryKeyColumns) {
                 PropertyInfo property = f_ColumnToProperties[pkColumn];
 
@@ -266,32 +351,32 @@ namespace Meebey.SmartDao
             if (res.Count == 0) {
                 throw new DataNotFoundException();
             }
-            
+
             return res[0];
         }
-        
+
         public T GetFirst(T template, GetOptions options)
         {
             if (options == null) {
                 throw new ArgumentNullException("options");
             }
-            
+
             options.Limit = 1;
             IList<T> res = GetAll(template, options);
             if (res.Count == 0) {
                 throw new DataNotFoundException();
             }
-            
+
             return res[0];
         }
-        
+
         public T GetFirst(T template, params string[] selectColumns)
         {
             GetOptions options = new GetOptions();
             options.SelectFields = selectColumns;
             return GetFirst(template, options);
         }
-        
+
         /*
         public int GetCount(T template, GetOptions options)
         {
@@ -304,20 +389,20 @@ namespace Meebey.SmartDao
             return res
         }
         */
-        
+
         public IList<T> GetAll(T template, params string[] selectColumns)
         {
             GetOptions options = new GetOptions();
             options.SelectFields = selectColumns;
             return GetAll(template, options);
         }
-        
+
         public IList<T> GetAll(T template, GetOptions options)
         {
             if (options == null) {
                 throw new ArgumentNullException("options");
             }
-            
+
             InitFields();
 
             List<string> whereColumnNames     = null;
@@ -336,20 +421,20 @@ namespace Meebey.SmartDao
                     if (value == null) {
                         continue;
                     }
-                    
+
                     if (value is string) {
                         string strValue = (string) value;
                         if (strValue.StartsWith("%") || strValue.EndsWith("%")) {
                             @operator = "LIKE";
                         }
                     }
-                    
+
                     whereColumnNames.Add(columnName);
                     whereColumnOperators.Add(@operator);
                     whereColumnValues.Add(value);
                 }
             }
-            
+
             IList<string> orderByColumns    = null;
             IList<string> orderByDirections = null;
             if (options.OrderBy != null && options.OrderBy.Count > 0) {
@@ -383,7 +468,7 @@ namespace Meebey.SmartDao
                         selectColumnNames.Add(propertyName);
                         continue;
                     }
-                    
+
                     string columnName;
                     if (!f_PropertyToColumn.TryGetValue(propertyName, out columnName)) {
                         throw new InvalidOperationException("Property for column in SelectFields could not be found: " + propertyName);
@@ -391,7 +476,7 @@ namespace Meebey.SmartDao
                     selectColumnNames.Add(columnName);
                 }
             }
-            
+
             // only pass offset and/or limit parameter if the RDBMS actually supports it
             int? limit = options.Limit;
             if (!f_DatabaseManager.SqlProvider.HasLimitSupport) {
@@ -401,87 +486,68 @@ namespace Meebey.SmartDao
             if (!f_DatabaseManager.SqlProvider.HasOffsetSupport) {
                 offset = null;
             }
-            IDbCommand cmd = f_DatabaseManager.CreateSelectCommand(f_TableName,
-                                                                   selectColumnNames,
-                                                                   whereColumnNames,
-                                                                   whereColumnOperators,
-                                                                   whereColumnValues,
-                                                                   orderByColumns,
-                                                                   orderByDirections,
-                                                                   limit,
-                                                                   offset);
+            using (IDbCommand cmd = f_DatabaseManager.CreateSelectCommand(
+                                        f_TableName,
+                                        selectColumnNames,
+                                        whereColumnNames,
+                                        whereColumnOperators,
+                                        whereColumnValues,
+                                        orderByColumns,
+                                        orderByDirections,
+                                        limit,
+                                        offset)) {
 #if LOG4NET
-            _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
-            _Logger.Debug("GetAll(): parsed SQL: " + ParseCommandParameters(cmd));
-            
-            DateTime start, stop;
-            start = DateTime.UtcNow;
-#endif
-            using (IDataReader reader = cmd.ExecuteReader()) {
-#if LOG4NET
-                stop = DateTime.UtcNow;
-                _Logger.Debug("GetAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
-#endif
-                List<T> rows = new List<T>();
-                if (options.Offset != null && options.Offset > 0 &&
-                    !f_DatabaseManager.SqlProvider.HasOffsetSupport) {
-#if LOG4NET
-                    _Logger.Debug("GetAll(): emulating offset of: " + options.Offset);
-#endif
-                    // RDBMS doesn't support OFFSET, so emulate it
-                    for (int i = 0; i < offset; i++) {
-                        reader.Read();
-                    }
-                }
-                while (reader.Read()) {
-                    T row = new T();
-                    rows.Add(row);
-                    for (int i = 0; i < reader.FieldCount; i++) {
-                        if (reader.IsDBNull(i)) {
-                            // don't need to set null values
-                            continue;
-                        }
-                        
-                        string name = reader.GetName(i);
-                        object value = reader.GetValue(i);
-                        
-                        PropertyInfo property;
-                        if (!f_ColumnToProperties.TryGetValue(name, out property)) {
-                            throw new InvalidOperationException("Property for column could not be found: " + name);
-                        }
-                        if (!property.PropertyType.IsAssignableFrom(value.GetType())) {
-                            throw new InvalidOperationException(
-                                        String.Format("Property type: {0} of {1} doesn't match column type: {2} for column: {3}",
-                                                      property.PropertyType, row.GetType() , value.GetType(), name));
-                        }
-                        
-                        property.SetValue(row, value, null);
-                    }
-                    
-                    if (options.Limit != null &&
-                        !f_DatabaseManager.SqlProvider.HasLimitSupport) {
-                        // RDBMS doesn't support LIMIT, so emulate it
-                        if (rows.Count >= options.Limit) {
-#if LOG4NET
-                            _Logger.Debug("GetAll(): emulating limit of: " + options.Limit);
-#endif
-                            break;
-                        }
-                    }
-                }
-                
-                return rows;
-            }                        
-        }
+                _Logger.Debug("GetAll(): SQL: " + cmd.CommandText);
+                _Logger.Debug("GetAll(): parsed SQL: " + ParseCommandParameters(cmd));
         
+                DateTime start, stop;
+                start = DateTime.UtcNow;
+#endif
+                using (IDataReader reader = cmd.ExecuteReader()) {
+#if LOG4NET
+                    stop = DateTime.UtcNow;
+                    _Logger.Debug("GetAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
+#endif
+                    List<T> rows = new List<T>();
+                    if (options.Offset != null && options.Offset > 0 &&
+                        !f_DatabaseManager.SqlProvider.HasOffsetSupport) {
+#if LOG4NET
+                        _Logger.Debug("GetAll(): emulating offset of: " + options.Offset);
+#endif
+                        // RDBMS doesn't support OFFSET, so emulate it
+                        for (int i = 0; i < offset; i++) {
+                            reader.Read();
+                        }
+                    }
+                    while (reader.Read()) {
+                        T row = CreateDBObject(reader);
+                        rows.Add(row);
+    
+                        if (options.Limit != null &&
+                            !f_DatabaseManager.SqlProvider.HasLimitSupport) {
+                            // RDBMS doesn't support LIMIT, so emulate it
+                            if (rows.Count >= options.Limit) {
+    #if LOG4NET
+                                _Logger.Debug("GetAll(): emulating limit of: " + options.Limit);
+    #endif
+                                break;
+                            }
+                        }
+                    }
+    
+                    return rows;
+                }
+            }
+        }
+
         public void RemoveSingle(T template)
         {
             if (template == null) {
                 throw new ArgumentNullException("template");
             }
-            
+
             InitFields();
-            
+
             foreach (string pkColumn in f_PrimaryKeyColumns) {
                 PropertyInfo property = f_ColumnToProperties[pkColumn];
 
@@ -499,11 +565,11 @@ namespace Meebey.SmartDao
                 throw new TooMuchDataRemovedException();
             }
         }
-        
+
         public int RemoveAll(T template)
         {
             InitFields();
-            
+
             List<string> whereColumnNames     = null;
             List<string> whereColumnOperators = null;
             List<object> whereColumnValues    = null;
@@ -519,31 +585,33 @@ namespace Meebey.SmartDao
                     if (value == null) {
                         continue;
                     }
-                    
+
                     whereColumnNames.Add(columnName);
                     whereColumnOperators.Add("=");
                     whereColumnValues.Add(value);
                 }
             }
-            
-            IDbCommand cmd = f_DatabaseManager.CreateDeleteCommand(f_TableName,
-                                                                  whereColumnNames,
-                                                                  whereColumnOperators,
-                                                                  whereColumnValues);
+
+            using (IDbCommand cmd = f_DatabaseManager.CreateDeleteCommand(
+                                        f_TableName,
+                                        whereColumnNames,
+                                        whereColumnOperators,
+                                        whereColumnValues)) {
 #if LOG4NET
-            _Logger.Debug("RemoveAll(): SQL: " + cmd.CommandText);
-            _Logger.Debug("RemoveAll(): parsed SQL: " + ParseCommandParameters(cmd));            
-            
-            DateTime start, stop;
-            start = DateTime.UtcNow;
+                _Logger.Debug("RemoveAll(): SQL: " + cmd.CommandText);
+                _Logger.Debug("RemoveAll(): parsed SQL: " + ParseCommandParameters(cmd));
+    
+                DateTime start, stop;
+                start = DateTime.UtcNow;
 #endif
-            int res = cmd.ExecuteNonQuery();
+                int res = cmd.ExecuteNonQuery();
 #if LOG4NET
-            _Logger.Debug("RemoveAll(): affected rows: " + res);
-            stop = DateTime.UtcNow;
-            _Logger.Debug("RemoveAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
+                _Logger.Debug("RemoveAll(): affected rows: " + res);
+                stop = DateTime.UtcNow;
+                _Logger.Debug("RemoveAll(): query took: " + (stop - start).TotalMilliseconds + " ms");
 #endif
-            return res;
+                return res;
+            }
         }
     }
 }

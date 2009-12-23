@@ -37,17 +37,17 @@ namespace Meebey.SmartDao.Tests
             */
             
             /*
-            con = new MySqlConnection("Server=localhost;" + 
+            con = new MySqlConnection("Server=localhost;" +
                                       "Database=test;" +
                                       "User ID=root;");
             provider = new MySqlProvider();
             */
-            
+
             /*
             con = new SqliteConnection("Data Source=test.db;");
             provider = new SqliteProvider();
             */
-            
+
             /*
             con = new NpgsqlConnection("Server=mussolini.gsd-software.net;" + 
                                        "Database=test;" +
@@ -56,15 +56,37 @@ namespace Meebey.SmartDao.Tests
             provider = new PostgreSqlProvider();
             */
             
+            /*
+            con = new NpgsqlConnection("Server=192.168.8.113;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            provider = new PostgreSqlProvider();
+            */
             
-            con = new SqlConnection("Server=mussolini.gsd-software.net;" + 
-            //con = new SqlConnection("Server=62.80.20.132;" + 
+            /*
+            con = new NpgsqlConnection("Server=62.80.20.131;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            provider = new PostgreSqlProvider();
+            */
+            
+            //con = new SqlConnection("Server=mussolini.gsd-software.net;" +
+            con = new SqlConnection("Server=62.80.20.132;" +
                                     "Database=test;" +
                                     "User ID=test;" +
                                     "Password=test;");
             provider = new MicrosoftSqlProvider();
-            
-            
+
+			/*
+            con = new SqlConnection("Server=192.168.8.112;" + 
+                                    "Database=test;" +
+                                    "User ID=test;" +
+                                    "Password=test;");
+            provider = new MicrosoftSqlProvider();
+            */
+
             /*
             con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
                                        "Database=test;" +
@@ -84,7 +106,7 @@ namespace Meebey.SmartDao.Tests
             
             Console.WriteLine("--- " + con + " ---");
             Console.WriteLine("--- " + provider + " ---");
-            int count = 10000;
+            int count = 100000;
             DateTime start, stop;
 
             // WARMUP
@@ -134,10 +156,10 @@ namespace Meebey.SmartDao.Tests
             // HARD CLEAN UP
             dbMan.DropTable(typeof(DBTest));
             dbMan.InitTable(typeof(DBTest));
-            
+
             // BREAK
             Thread.Sleep(5000);
-            
+
             // SHOWTIME
             Console.WriteLine("--- INSERT (" + count + ") ---");
             start = DateTime.UtcNow;

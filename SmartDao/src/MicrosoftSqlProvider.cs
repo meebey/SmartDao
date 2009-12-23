@@ -17,7 +17,7 @@ namespace Meebey.SmartDao
                 return false;
             }
         }
-        
+
         public MicrosoftSqlProvider()
         {
         }
@@ -30,7 +30,7 @@ namespace Meebey.SmartDao
                 case DbType.Boolean:
                     return "BIT";
             }
-            
+
             return base.GetDataTypeName(dbType);
         }
         
@@ -53,17 +53,58 @@ namespace Meebey.SmartDao
             if (limit == null) {
                 return sql;
             }
+
             // TODO: check MSSQL version
             if (offset != null) {
                 throw new NotSupportedException("Microsoft SQL Server doesn't support offset in SELECT statements.");
             }
-            
+
             // remove SELECT part
             sql = sql.Substring(7);
             sql = String.Format("SELECT TOP {0} {1} ", limit, sql);
+
             return sql;
         }
-        
+
+        public override string CreateSelectVersionStatement()
+        {
+            return "SELECT @@VERSION";
+        }
+
+        public override string CreateInsertStatement(string tableName,
+                                                     IList<string> columnNames,
+                                                     IList<string> columnValues)
+        {
+            string sql = base.CreateInsertStatement(tableName,
+                                                    columnNames,
+                                                    columnValues);
+
+            sql = String.Format(
+                "{0}{1} SELECT IDENT_CURRENT('{2}')",
+                sql,
+                GetStatementSeparator(),
+                tableName
+            );
+
+            return sql;
+        }
+
+        /*
+        public override string CreateSequenceStatement(string tableName,
+                                                       string columnName,
+                                                       int seed,
+                                                       int increment) {
+//ALTER TABLE table_name
+//    ALTER COLUMN column_name
+//   {
+//    type_name[({precision[.scale]})][NULL|NOT NULL]
+//   {DROP DEFAULT
+//   | SET DEFAULT constant_expression
+//   | IDENTITY [ ( seed , increment ) ]
+//   }
+        }
+        */
+
         // Microsoft SQL supports ANSI quotes correctly, didn't expect that one
         /*
         public override string GetTableName(string tableName)
