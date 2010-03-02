@@ -127,38 +127,38 @@ namespace Meebey.SmartDao
                     continue;
                 }
     
-                string name = reader.GetName(i);
-                object value = reader.GetValue(i);
+                string columnName = reader.GetName(i);
+                object columnValue = reader.GetValue(i);
 
-                SetPropertyValue(row, name, value);
+                SetPropertyValue(row, columnName, columnValue);
             }
 
             return row;
         }
 
-        private void SetPropertyValue(T row, string propertyName, object propertyValue)
+        private void SetPropertyValue(T row, string columnName, object columnValue)
         {
             if (row == null) {
                 throw new ArgumentNullException("row");
             }
-            if (propertyName == null) {
-                throw new ArgumentNullException("propertyName");
+            if (columnName == null) {
+                throw new ArgumentNullException("columnName");
             }
-            if (propertyValue == null) {
-                throw new ArgumentNullException("propertyValue");
+            if (columnValue == null) {
+                throw new ArgumentNullException("columnValue");
             }
 
             PropertyInfo property;
-            if (!f_ColumnToProperties.TryGetValue(propertyName, out property)) {
-                throw new InvalidOperationException("Property for column could not be found: " + propertyName);
+            if (!f_ColumnToProperties.TryGetValue(columnName, out property)) {
+                throw new InvalidOperationException("Property for column could not be found: " + columnName);
             }
-            if (!property.PropertyType.IsAssignableFrom(propertyValue.GetType())) {
+            if (!property.PropertyType.IsAssignableFrom(columnValue.GetType())) {
                 throw new InvalidOperationException(
                             String.Format("Property type: {0} of {1} doesn't match column type: {2} for column: {3}",
-                                          property.PropertyType, row.GetType() , propertyValue.GetType(), propertyName));
+                                          property.PropertyType, row.GetType() , columnValue.GetType(), columnName));
             }
 
-            property.SetValue(row, propertyValue, null);
+            property.SetValue(row, columnValue, null);
         }
 
         public IList<T> Add(IList<T> entry)
@@ -189,17 +189,17 @@ namespace Meebey.SmartDao
                 columnValues.Add(value);
             }
 
-            bool isPkNull = false;
-            string pkName = null;
+            var pkValues = new Dictionary<string, object>(f_PrimaryKeyColumns.Count);
+            string emptyPkColumn = null;
             foreach (string pkColumn in f_PrimaryKeyColumns) {
                 PropertyInfo property = f_ColumnToProperties[pkColumn];
 
-                object value = property.GetValue(entry, null);
-                if (value == null) {
-                    isPkNull = true;
+                var pkValue = property.GetValue(entry, null);
+                if (pkValue == null) {
+                    emptyPkColumn = pkColumn;
                     break;
                 }
-                pkName = pkColumn;
+                pkValues.Add(pkColumn, pkValue);
             }
 
             using (IDbCommand cmd = f_DatabaseManager.CreateInsertCommand(
@@ -214,24 +214,25 @@ namespace Meebey.SmartDao
                 start = DateTime.UtcNow;
 #endif
 
-                object pkValue = null;
                 T pkEntry = new T();
-                if (isPkNull) {
+                if (emptyPkColumn != null) {
                     // looks like this table uses auto generated keys
                     // TODO: an explicit attribute for this would be much nicer!
                     using (IDataReader reader = cmd.ExecuteReader()) {
                         // try to obtain the generated key and write it back
                         if (reader.NextResult() && reader.Read()) {
-                            pkValue = reader.GetValue(0);
+                            pkValues.Add(emptyPkColumn, reader.GetValue(0));
                         } else {
-                            throw new DataNotFoundException("Couldnt't obtain auto-generated key from INSERT");
+                            throw new DataNotFoundException("Couldn't obtain auto-generated key from INSERT");
                         }
                     }
                 } else {
                     cmd.ExecuteNonQuery();
-                    // TODO: read PK value from entry and set pkValue
                 }
-                SetPropertyValue(pkEntry, pkName, pkValue);
+
+                foreach (KeyValuePair<string, object> pkColumn in pkValues) {
+                    SetPropertyValue(pkEntry, pkColumn.Key, pkColumn.Value);
+                }
 
 #if LOG4NET
                 stop = DateTime.UtcNow;
@@ -478,14 +479,23 @@ namespace Meebey.SmartDao
             }
 
             // only pass offset and/or limit parameter if the RDBMS actually supports it
-            int? limit = options.Limit;
-            if (!f_DatabaseManager.SqlProvider.HasLimitSupport) {
-                limit = null;
-            }
             int? offset = options.Offset;
             if (!f_DatabaseManager.SqlProvider.HasOffsetSupport) {
                 offset = null;
             }
+            int? limit = options.Limit;
+            if (!f_DatabaseManager.SqlProvider.HasLimitSupport) {
+                limit = null;
+            }
+
+            // in case the RDMBS only supports limit without offset then we have
+            // to adjust the limit value to include the offset section
+            if (limit != null &&
+                options.Offset != null &&
+                !f_DatabaseManager.SqlProvider.HasOffsetSupport) {
+                limit += options.Offset;
+            }
+
             using (IDbCommand cmd = f_DatabaseManager.CreateSelectCommand(
                                         f_TableName,
                                         selectColumnNames,
@@ -515,7 +525,7 @@ namespace Meebey.SmartDao
                         _Logger.Debug("GetAll(): emulating offset of: " + options.Offset);
 #endif
                         // RDBMS doesn't support OFFSET, so emulate it
-                        for (int i = 0; i < offset; i++) {
+                        for (int i = 0; i < options.Offset; i++) {
                             reader.Read();
                         }
                     }
