@@ -72,8 +72,7 @@ namespace Meebey.SmartDao.Tests
             provider = new PostgreSqlProvider();
             */
             
-            //con = new SqlConnection("Server=mussolini.gsd-software.net;" +
-            con = new SqlConnection("Server=62.80.20.132;" +
+            con = new SqlConnection("Server=mussolini.gsd-software.net;" +
                                     "Database=test;" +
                                     "User ID=test;" +
                                     "Password=test;");
@@ -106,7 +105,8 @@ namespace Meebey.SmartDao.Tests
             
             Console.WriteLine("--- " + con + " ---");
             Console.WriteLine("--- " + provider + " ---");
-            int count = 100000;
+            //int count = 100000;
+            int count = 100;
             DateTime start, stop;
 
             // WARMUP
@@ -244,7 +244,7 @@ namespace Meebey.SmartDao.Tests
             Console.WriteLine("query.GetAll() rows: " + tests.Count);
             Console.WriteLine("query.GetAll() took: " + (stop - start).TotalMilliseconds + " ms");
             Console.WriteLine("query.GetAll() avg: " + (stop - start).TotalMilliseconds / tests.Count  + " ms/row");
-            
+
             Console.WriteLine("--- SELECT pk_int32 ORDER BY pk_int32 ASC ---");
             start = DateTime.UtcNow;
             options = new GetOptions();

@@ -16,8 +16,9 @@ namespace Meebey.SmartDao
         private string          f_TableName;
         private IDictionary<string, PropertyInfo> f_ColumnToProperties;
         private IList<string>                     f_PrimaryKeyColumns;
+        private IList<string>                     f_SequenceColumns;
         private IDictionary<string, string>       f_PropertyToColumn;
-        
+
         public Query(DatabaseManager dbManager)
         {
             if (dbManager == null) {
@@ -50,6 +51,7 @@ namespace Meebey.SmartDao
             f_ColumnToProperties = new Dictionary<string, PropertyInfo>(properties.Length);
             f_PropertyToColumn   = new Dictionary<string, string>(properties.Length);
             f_PrimaryKeyColumns  = new List<string>();
+            f_SequenceColumns    = new List<string>();
             bool foundColumn = false;
             foreach (PropertyInfo property in properties) {
                 object[] columnAttrs = property.GetCustomAttributes(typeof(ColumnAttribute), true);
@@ -84,6 +86,14 @@ namespace Meebey.SmartDao
                                                 property.Name));
 #endif
                     f_PrimaryKeyColumns.Add(columnName);
+                }
+                object[] seqAttrs = property.GetCustomAttributes(typeof(SequenceAttribute), true);
+                if (seqAttrs != null && seqAttrs.Length > 0) {
+#if LOG4NET
+                    _Logger.Debug(String.Format("InitFields(): found Sequence Property: '{0}'",
+                                                property.Name));
+#endif
+                    f_SequenceColumns.Add(columnName);
                 }
             }
             if (!foundColumn) {
@@ -130,6 +140,7 @@ namespace Meebey.SmartDao
                 string columnName = reader.GetName(i);
                 object columnValue = reader.GetValue(i);
 
+                //
                 SetPropertyValue(row, columnName, columnValue);
             }
 
@@ -153,9 +164,26 @@ namespace Meebey.SmartDao
                 throw new InvalidOperationException("Property for column could not be found: " + columnName);
             }
             if (!property.PropertyType.IsAssignableFrom(columnValue.GetType())) {
-                throw new InvalidOperationException(
-                            String.Format("Property type: {0} of {1} doesn't match column type: {2} for column: {3}",
-                                          property.PropertyType, row.GetType() , columnValue.GetType(), columnName));
+                // make sure to use the unboxed Nullable<> type here
+                Type targetType;
+                if (property.PropertyType.IsGenericType &&
+                    property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>)) {
+                    targetType = property.PropertyType.GetGenericArguments()[0];
+                } else {
+                    targetType = property.PropertyType;
+                }
+                bool convertible = false;
+                try {
+                    columnValue = Convert.ChangeType(columnValue, targetType);
+                    convertible = true;
+                } catch (InvalidCastException) {
+                } catch (FormatException) {
+                }
+                if (!convertible) {
+                    throw new InvalidOperationException(
+                                String.Format("Column: '{0}.{1}' with type: {2} is not convertible to property: '{3}.{4}' with type: {5}",
+                                              f_TableName, columnName, columnValue.GetType(), f_TableType.Name, property.Name, targetType));
+                }
             }
 
             property.SetValue(row, columnValue, null);
@@ -190,13 +218,19 @@ namespace Meebey.SmartDao
             }
 
             var pkValues = new Dictionary<string, object>(f_PrimaryKeyColumns.Count);
-            string emptyPkColumn = null;
+            bool isPrimaryKeySequence = false;
+            string pkSequenceColumn = null;
+            Type pkSequenceColumnType = null;
             foreach (string pkColumn in f_PrimaryKeyColumns) {
                 PropertyInfo property = f_ColumnToProperties[pkColumn];
 
                 var pkValue = property.GetValue(entry, null);
-                if (pkValue == null) {
-                    emptyPkColumn = pkColumn;
+                if (pkValue == null &&
+                    f_SequenceColumns.Contains(pkColumn)) {
+                    isPrimaryKeySequence = true;
+                    pkSequenceColumn = pkColumn;
+                    // make sure to use the unboxed Nullable<> type here
+                    pkSequenceColumnType = property.PropertyType.GetGenericArguments()[0];
                     break;
                 }
                 pkValues.Add(pkColumn, pkValue);
@@ -215,17 +249,28 @@ namespace Meebey.SmartDao
 #endif
 
                 T pkEntry = new T();
-                if (emptyPkColumn != null) {
-                    // looks like this table uses auto generated keys
-                    // TODO: an explicit attribute for this would be much nicer!
+                if (isPrimaryKeySequence) {
+                    // this table uses auto generated keys
+                    // try to obtain the generated key and write it back
+                    object pkValue = cmd.ExecuteScalar();
+                    /*
                     using (IDataReader reader = cmd.ExecuteReader()) {
-                        // try to obtain the generated key and write it back
-                        if (reader.NextResult() && reader.Read()) {
-                            pkValues.Add(emptyPkColumn, reader.GetValue(0));
-                        } else {
-                            throw new DataNotFoundException("Couldn't obtain auto-generated key from INSERT");
+                        // HACK: some RDBMSs return an empty result set first,
+                        // while others do not. Thus we have to try to obtain
+                        // the key in both ways.
+                        if (reader.Read() || (reader.NextResult() && reader.Read())) {
+                            pkValue = reader.GetValue(0);
                         }
                     }
+                    */
+                    if (pkValue == null) {
+                        throw new DataNotFoundException("Couldn't obtain auto-generated key from INSERT");
+                    }
+                    pkValues.Add(
+                        pkSequenceColumn,
+                        Convert.ChangeType(pkValue,
+                                           pkSequenceColumnType)
+                    );
                 } else {
                     cmd.ExecuteNonQuery();
                 }
@@ -317,7 +362,7 @@ namespace Meebey.SmartDao
 #if LOG4NET
                 _Logger.Debug("SetAll(): SQL: " + cmd.CommandText);
                 _Logger.Debug("SetAll(): parsed SQL: " + ParseCommandParameters(cmd));
-    
+
                 DateTime start, stop;
                 start = DateTime.UtcNow;
 #endif

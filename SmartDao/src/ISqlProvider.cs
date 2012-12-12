@@ -36,15 +36,20 @@ namespace Meebey.SmartDao
                                           IList<string> columnNames,
                                           IList<Type> columnTypes,
                                           IList<int> columnLengths,
-                                          IList<bool?> columnIsNullables,
-                                          IList<string> primaryKeys);
+                                          IList<bool> columnIsNullables,
+                                          IList<string> primaryKeys,
+                                          IList<string> sequences);
+        string CreateTableColumnExpression(string columnName,
+                                           string columnType,
+                                           int? columnLength,
+                                           bool isPrimaryKey,
+                                           bool isSequence,
+                                           bool isNullable);
         string CreateDropTableStatement(string tableName);
-        /*
         string CreateSequenceStatement(string tableName,
                                        string columnName,
-                                       int seed,
-                                       int increment);
-        */
+                                       int? seed,
+                                       int? increment);
 
         string CreateInsertStatement(string tableName,
                                      IList<string> columnNames,

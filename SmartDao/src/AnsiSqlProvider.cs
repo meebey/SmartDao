@@ -65,7 +65,7 @@ namespace Meebey.SmartDao
         public AnsiSqlProvider()
         {
         }
-        
+
         public virtual string GetDataTypeName(DbType dbType)
         {
             switch (dbType) {
@@ -138,7 +138,13 @@ namespace Meebey.SmartDao
             return null;
         }
 
-        public virtual string CreateCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool?> columnIsNullables, IList<string> primaryKeys)
+        public virtual string CreateCreateTableStatement(string tableName,
+                                                         IList<string> columnNames,
+                                                         IList<Type> columnTypes,
+                                                         IList<int> columnLengths,
+                                                         IList<bool> columnIsNullables,
+                                                         IList<string> primaryKeys,
+                                                         IList<string> sequences)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -155,55 +161,60 @@ namespace Meebey.SmartDao
             if (primaryKeys == null) {
                 throw new ArgumentNullException("primaryKeys");
             }
-            
+            if (sequences == null) {
+                throw new ArgumentNullException("sequences");
+            }
+
             if (!(columnNames.Count == columnTypes.Count &&
                   columnNames.Count == columnLengths.Count)) {
                 throw new ArgumentException("columnNames, columnTypes and columnLengths must have the same size.");
             }
-            
+
             if (columnNames.Count == 0) {
                 throw new ArgumentException("columnNames, columnTypes and columnLengths must not be empty.");
             }
-            
+
             StringBuilder sql = new StringBuilder("CREATE TABLE ");
             sql.AppendFormat("{0} (\n", GetTableName(tableName));
             for (int idx = 0; idx < columnNames.Count; idx++) {
                 string name = columnNames[idx];
-                Type type = columnTypes[idx]; 
+                Type type = columnTypes[idx];
                 int length = columnLengths[idx];
-                bool? isNullable = columnIsNullables[idx];
-                
+                bool isNullable = columnIsNullables[idx];
+                bool isPrimaryKey = primaryKeys.Contains(name);
+                bool isSequence = sequences.Contains(name);
+
                 if (type.IsValueType && !IsNullableType(type)) {
                     throw new NotSupportedException("Value type: " + type + " must be nullable for column: " + name);
                 }
-                
+
                 if (!f_SupportedCliTypes.ContainsKey(type)) {
                     throw new NotSupportedException("Unsupported column data type: " + type);
                 }
-                
-                sql.AppendFormat("{0} ", GetColumnName(name));
+
+                string columnType = GetDataTypeName(GetDBType(type));
+                int? columnLength = null;
                 if (type == typeof(string)) {
                     // TODO: CHAR support
                     if (length == -1) {
-                        sql.Append("TEXT");
-                    } else {
-                        sql.Append(GetDataTypeName(DbType.String));
-                        if (length != 0) {
-                            sql.AppendFormat("({0})", length);
-                        }
+                        columnType = "TEXT";
+                    } else if (length != 0) {
+                        columnLength = length;
                     }
-                } else {
-                    sql.Append(GetDataTypeName(GetDBType(type)));
                 }
-                
-                if (isNullable != null && !isNullable.Value) {
-                    sql.Append(" NOT NULL");
-                }
-                
+
+                sql.Append(
+                    CreateTableColumnExpression(name, columnType, columnLength,
+                                                isPrimaryKey,
+                                                isSequence,
+                                                isNullable)
+                );
+
                 sql.Append(", \n");
             }
             sql.Remove(sql.Length - 3, 3);
-            
+
+            /*
             if (primaryKeys.Count > 0) {
                 sql.Append(", \nPRIMARY KEY (");
                 foreach (string pk in primaryKeys) {
@@ -212,6 +223,8 @@ namespace Meebey.SmartDao
                 sql.Remove(sql.Length - 2, 2);
                 sql.Append(")");
             }
+            */
+
             // CREATE UNIQUE INDEX title_idx ON films (title);
             // CONSTRAINT valid_discount CHECK (price > discounted_price)
             // UNIQUE (product_no)
@@ -220,7 +233,33 @@ namespace Meebey.SmartDao
             return sql.ToString();
         }
 
-        public virtual string CreateInsertStatement(string tableName, IList<string> columnNames, IList<string> columnValues)
+        public virtual string CreateTableColumnExpression(string columnName,
+                                                          string columnType,
+                                                          int? columnLength,
+                                                          bool isPrimaryKey,
+                                                          bool isSequence,
+                                                          bool isNullable)
+        {
+            if (isSequence) {
+                throw new NotSupportedException();
+            }
+
+            StringBuilder sql = new StringBuilder();
+            sql.AppendFormat("{0} {1}", GetColumnName(columnName), columnType);
+            if (columnLength != null) {
+                sql.AppendFormat("({0})", columnLength);
+            }
+            if (isPrimaryKey) {
+                sql.Append(" PRIMARY KEY");
+            } else if (!isNullable) {
+                sql.Append(" NOT NULL");
+            }
+            return sql.ToString();
+        }
+
+        public virtual string CreateInsertStatement(string tableName,
+                                                    IList<string> columnNames,
+                                                    IList<string> columnValues)
         {
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
@@ -243,7 +282,7 @@ namespace Meebey.SmartDao
             StringBuilder sql = new StringBuilder("INSERT INTO ");
             sql.Append(GetTableName(tableName));
             sql.Append(" (");
-            
+
             StringBuilder values = new StringBuilder();
             for (int idx = 0; idx < columnNames.Count; idx++) {
                 string name = columnNames[idx];
@@ -273,7 +312,7 @@ namespace Meebey.SmartDao
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
             }
-            
+
             StringBuilder sql = new StringBuilder("DROP TABLE ");
             sql.Append(GetTableName(tableName));
             
@@ -511,7 +550,7 @@ namespace Meebey.SmartDao
             if (tableName == null) {
                 throw new ArgumentNullException("tableName");
             }
-            
+
             if (whereColumnNames != null &&
                 whereColumnOperators != null &&
                 whereColumnValues != null) {
@@ -534,6 +573,14 @@ namespace Meebey.SmartDao
             }
             return CreateDeleteStatement(tableName,
                                          whereClause != null ? whereClause.ToString() : null);
+        }
+
+        public virtual string CreateSequenceStatement(string tableName,
+                                                      string columnName,
+                                                      int? seed,
+                                                      int? increment)
+        {
+            throw new NotImplementedException();
         }
 
         private static bool IsNullableType(Type type)

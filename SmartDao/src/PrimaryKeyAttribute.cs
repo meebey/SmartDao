@@ -4,24 +4,15 @@ namespace Meebey.SmartDao
 {
     public class PrimaryKeyAttribute : Attribute
     {
-        private string _Name;
-        
-        public string Name {
-            get {
-                return _Name;
-            }
-            set {
-                _Name = value;
-            }
-        }
-        
+        public string Name { get; set; }
+
         public PrimaryKeyAttribute()
         {
         }
-        
+
         public PrimaryKeyAttribute(string name)
         {
-            _Name = name;
+            Name = name;
         }
     }
 }

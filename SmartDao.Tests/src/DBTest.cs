@@ -12,7 +12,7 @@ namespace Meebey.SmartDao.Tests
         private Int32?    _Int32Column;
         private Int32?    _Int32ColumnFixed;
         private Boolean?  _BooleanColumn;
-        private Decimal?  _DecimalColumnFixed;
+        private Decimal?  _DecimalColumn;
         private Single?   _SingleColumn;
         private Double?   _DoubleColumn;
         private DateTime? _DateTimeColumn;
@@ -54,7 +54,7 @@ namespace Meebey.SmartDao.Tests
         }
         
         [Column(Name = "int32_column")]
-        public Nullable<int> Int32Column {
+        public Int32? Int32Column {
             get {
                 return _Int32Column;
             }
@@ -65,7 +65,7 @@ namespace Meebey.SmartDao.Tests
 
         [Column(Name = "int32_column_fixed",
                 Length = 4)]
-        public Nullable<int> Int32ColumnFixed {
+        public Int32? Int32ColumnFixed {
             get {
                 return _Int32ColumnFixed;
             }
@@ -75,17 +75,17 @@ namespace Meebey.SmartDao.Tests
         }
 
         [Column(Name = "decimal_column")]
-        public Nullable<decimal> DecimalColumnFixed {
+        public Decimal? DecimalColumn {
             get {
-                return _DecimalColumnFixed;
+                return _DecimalColumn;
             }
             set {
-                _DecimalColumnFixed = value;
+                _DecimalColumn = value;
             }
         }
 
         [Column(Name = "single_column")]
-        public Nullable<float> SingleColumn {
+        public Single? SingleColumn {
             get {
                 return _SingleColumn;
             }
@@ -95,7 +95,7 @@ namespace Meebey.SmartDao.Tests
         }
 
         [Column(Name = "double_column")]
-        public Nullable<double> DoubleColumn {
+        public Double? DoubleColumn {
             get {
                 return _DoubleColumn;
             }

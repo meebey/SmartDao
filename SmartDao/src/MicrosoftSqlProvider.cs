@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Text;
 using System.Collections.Generic;
 
 namespace Meebey.SmartDao
@@ -89,19 +90,55 @@ namespace Meebey.SmartDao
             return sql;
         }
 
+        public override string CreateTableColumnExpression(string columnName,
+                                                           string columnType,
+                                                           int? columnLength,
+                                                           bool isPrimaryKey,
+                                                           bool isSequence,
+                                                           bool isNullable)
+        {
+            StringBuilder sql = new StringBuilder();
+            sql.AppendFormat("{0} {1}", GetColumnName(columnName), columnType);
+            if (columnLength != null) {
+                sql.AppendFormat("({0})", columnLength);
+            }
+            if (isPrimaryKey) {
+                sql.Append(" PRIMARY KEY");
+                if (isSequence) {
+                    sql.Append(" IDENTITY");
+                }
+            } else if (!isNullable) {
+                sql.Append(" NOT NULL");
+            }
+            return sql.ToString();
+        }
+
         /*
         public override string CreateSequenceStatement(string tableName,
                                                        string columnName,
-                                                       int seed,
-                                                       int increment) {
-//ALTER TABLE table_name
-//    ALTER COLUMN column_name
-//   {
-//    type_name[({precision[.scale]})][NULL|NOT NULL]
-//   {DROP DEFAULT
-//   | SET DEFAULT constant_expression
-//   | IDENTITY [ ( seed , increment ) ]
-//   }
+                                                       int? seed,
+                                                       int? increment)
+        {
+            if (tableName == null) {
+                throw new ArgumentNullException("tableName");
+            }
+            if (columnName == null) {
+                throw new ArgumentNullException("columnName");
+            }
+
+            var sql = String.Format(
+                "ALTER TABLE {0} ALTER COLUMN {1} IDENTITY",
+                GetTableName(tableName),
+                GetColumnName(columnName)
+            );
+            if (seed != null || increment != null) {
+                sql += String.Format(
+                    "({0}, {1})",
+                    seed == null ? 0 : seed,
+                    increment == null ? 1 : increment
+                );
+            }
+            return sql;
         }
         */
 

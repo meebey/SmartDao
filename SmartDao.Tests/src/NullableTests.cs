@@ -18,7 +18,7 @@ namespace Meebey.SmartDao.Tests
             Assert.AreEqual(3, foo, "#4");
             Assert.IsTrue(foo.Equals(3), "#5");
             Assert.IsTrue(3.Equals(foo), "#6");
-            
+
             foo = null;
             Assert.IsNull(foo, "#7");
             Assert.IsFalse(foo.HasValue, "#8");

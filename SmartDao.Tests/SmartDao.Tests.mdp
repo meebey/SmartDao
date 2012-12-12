@@ -1,4 +1,4 @@
-<Project name="SmartDao.Tests" fileversion="2.0" DefaultNamespace="SmartDao.Tests" language="C#" clr-version="Net_2_0" targetFramework="2.0" ctype="DotNetProject">
+<Project name="SmartDao.Tests" fileversion="2.0" DefaultNamespace="Meebey.SmartDao.Tests" language="C#" clr-version="Net_2_0" targetFramework="2.0" ctype="DotNetProject">
   <Configurations active="Debug">
     <Configuration name="Debug" ctype="DotNetProjectConfiguration">
       <Output directory="../bin/debug" assembly="SmartDao.Tests" assemblyKeyFile="." />
@@ -21,6 +21,9 @@
     <File subtype="Code" buildaction="Compile" name="src/DatabaseUriTests.cs" />
     <File subtype="Code" buildaction="Compile" name="src/NullableTests.cs" />
     <File subtype="Code" buildaction="Compile" name="src/DBNullableTests.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/DBAutoPKTest.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/QueryTests.cs" />
+    <File subtype="Code" buildaction="Compile" name="src/ConvertTests.cs" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />

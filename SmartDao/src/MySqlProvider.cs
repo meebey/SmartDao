@@ -78,9 +78,21 @@ namespace Meebey.SmartDao
             return sql + limitClause.ToString();
         }
         
-        public override string CreateCreateTableStatement(string tableName, IList<string> columnNames, IList<Type> columnTypes, IList<int> columnLengths, IList<bool?> columnIsNullables, IList<string> primaryKeys)
+        public override string CreateCreateTableStatement(string tableName,
+                                                          IList<string> columnNames,
+                                                          IList<Type> columnTypes,
+                                                          IList<int> columnLengths,
+                                                          IList<bool> columnIsNullables,
+                                                          IList<string> primaryKeys,
+                                                          IList<string> sequences)
         {
-            string sql = base.CreateCreateTableStatement(tableName, columnNames, columnTypes, columnLengths, columnIsNullables, primaryKeys);
+            string sql = base.CreateCreateTableStatement(tableName,
+                                                         columnNames,
+                                                         columnTypes,
+                                                         columnLengths,
+                                                         columnIsNullables,
+                                                         primaryKeys,
+                                                         sequences);
             //sql = sql.Substring(0, sql.Length - 1);
             sql += "\nENGINE = InnoDB";
             return sql;

@@ -131,20 +131,22 @@ namespace Meebey.SmartDao
             if (tableAttribute == null) {
                 throw new ArgumentNullException("tableAttribute");
             }
-            
-            PropertyInfo[] properties = tableType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            List<string> columnNames       = new List<string>(properties.Length); 
-            List<Type>   columnTypes       = new List<Type>(properties.Length); 
-            List<int>    columnLengths     = new List<int>(properties.Length);
-            List<bool?>  columnIsNullables = new List<bool?>(properties.Length);
-            List<string> primaryKeyColumns = new List<string>();
+
+            var properties = tableType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            var columnNames       = new List<string>(properties.Length);
+            var columnTypes       = new List<Type>(properties.Length);
+            var columnLengths     = new List<int>(properties.Length);
+            var columnIsNullables = new List<bool>(properties.Length);
+            var primaryKeyColumns = new List<string>();
+            var sequenceColumns    = new List<string>();
+            var sequenceAttributes = new Dictionary<string, SequenceAttribute>();
             foreach (PropertyInfo property in properties) {
                 object[] columnAttrs = property.GetCustomAttributes(typeof(ColumnAttribute), true);
                 if (columnAttrs == null || columnAttrs.Length == 0) {
                     continue;
                 }
                 ColumnAttribute columnAttr = (ColumnAttribute) columnAttrs [0];
-                
+
                 string columnName;
                 if (columnAttr.Name != null) {
                     columnName = columnAttr.Name;
@@ -155,22 +157,30 @@ namespace Meebey.SmartDao
                 columnTypes.Add(property.PropertyType);
                 columnLengths.Add(columnAttr.Length);
                 columnIsNullables.Add(columnAttr.IsNullable);
-                
+
                 object[] pkAttrs = property.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
                 if (pkAttrs != null && pkAttrs.Length > 0) {
                     primaryKeyColumns.Add(columnName);
+                }
+
+                object[] seqAttrs = property.GetCustomAttributes(typeof(SequenceAttribute), true);
+                if (seqAttrs != null && seqAttrs.Length > 0) {
+                    var seqAttr = (SequenceAttribute) seqAttrs [0];
+                    sequenceAttributes.Add(columnName, seqAttr);
+                    sequenceColumns.Add(columnName);
                 }
             }
             if (columnNames.Count == 0) {
                 throw new ArgumentException("Type does not contain any ColumnAttribute.", "tableType");
             }
-            
+
             string sql = _SqlProvider.CreateCreateTableStatement(GetTableName(tableType),
                                                                  columnNames,
                                                                  columnTypes,
                                                                  columnLengths,
                                                                  columnIsNullables,
-                                                                 primaryKeyColumns);
+                                                                 primaryKeyColumns,
+                                                                 sequenceColumns);
 #if LOG4NET
             _Logger.Debug("CreateTable(): SQL: " + sql);
 #endif
@@ -178,8 +188,27 @@ namespace Meebey.SmartDao
                 com.CommandText = sql;
                 com.ExecuteNonQuery();
             }
+
+            foreach (var sequence in sequenceAttributes) {
+                if (primaryKeyColumns.Contains(sequence.Key)) {
+                    // skip sequences on PK columns as they are already handled
+                    // in CreateCreateTableStatement()
+                    continue;
+                }
+                sql = _SqlProvider.CreateSequenceStatement(GetTableName(tableType),
+                                                           sequence.Key,
+                                                           sequence.Value.Seed,
+                                                           sequence.Value.Increment);
+#if LOG4NET
+                _Logger.Debug("CreateTable(): SQL: " + sql);
+#endif
+                using (IDbCommand com = _DBConnection.CreateCommand()) {
+                    com.CommandText = sql;
+                    com.ExecuteNonQuery();
+                }
+            }
         }
-        
+
         public void InitTable(Type tableType)
         {
             if (tableType == null) {
