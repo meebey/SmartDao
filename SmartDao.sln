@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartDao", "SmartDao\SmartDao.csproj", "{29059DF9-2456-4410-B413-7049A280F04D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartDao.Tests", "SmartDao.Tests\SmartDao.Tests.csproj", "{99848779-DB76-47E3-8CDC-8B500B01CDD3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{29059DF9-2456-4410-B413-7049A280F04D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29059DF9-2456-4410-B413-7049A280F04D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29059DF9-2456-4410-B413-7049A280F04D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29059DF9-2456-4410-B413-7049A280F04D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99848779-DB76-47E3-8CDC-8B500B01CDD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99848779-DB76-47E3-8CDC-8B500B01CDD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99848779-DB76-47E3-8CDC-8B500B01CDD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99848779-DB76-47E3-8CDC-8B500B01CDD3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = SmartDao.Tests\SmartDao.Tests.csproj
+		name = SmartDao
+		MonoDevelop.ChangeLogAddIn.ChangeLogInfo = $0
+		$0.policy = OneChangeLogInProjectRootDirectory
+	EndGlobalSection
+EndGlobal
