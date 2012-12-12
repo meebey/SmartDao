@@ -1,1 +1,90 @@
-<?xml version="1.0" encoding="utf-8"?><Project DefaultTargets="Build" ToolsVersion="3.5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  <PropertyGroup>    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>    <ProductVersion>9.0.21022</ProductVersion>    <SchemaVersion>2.0</SchemaVersion>    <ProjectGuid>{29059DF9-2456-4410-B413-7049A280F04D}</ProjectGuid>    <OutputType>Library</OutputType>    <RootNamespace>Meebey.SmartDao</RootNamespace>    <ApplicationIcon>.</ApplicationIcon>    <AssemblyName>Meebey.SmartDao</AssemblyName>    <AssemblyOriginatorKeyFile>.</AssemblyOriginatorKeyFile>    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>  </PropertyGroup>  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">    <DebugSymbols>true</DebugSymbols>    <DebugType>full</DebugType>    <Optimize>true</Optimize>    <OutputPath>..\bin\debug</OutputPath>    <DefineConstants>DEBUG,TRACE,LOG4NET</DefineConstants>    <ErrorReport>prompt</ErrorReport>    <WarningLevel>4</WarningLevel>    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>    <Externalconsole>true</Externalconsole>    <Execution>      <Execution clr-version="Net_2_0" xmlns="" />    </Execution>  </PropertyGroup>  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">    <DebugType>none</DebugType>    <Optimize>true</Optimize>    <OutputPath>..\bin\release</OutputPath>    <ErrorReport>prompt</ErrorReport>    <WarningLevel>4</WarningLevel>    <Externalconsole>true</Externalconsole>    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>    <Execution>      <Execution clr-version="Net_2_0" xmlns="" />    </Execution>  </PropertyGroup>  <ItemGroup>    <Folder Include="src\" />  </ItemGroup>  <ItemGroup>    <Compile Include="src\AnsiSqlProvider.cs" />    <Compile Include="src\AssemblyInfo.cs" />    <Compile Include="src\ColumnAttribute.cs" />    <Compile Include="src\DatabaseManager.cs" />    <Compile Include="src\ForeignKeyAttribute.cs" />    <Compile Include="src\GetOptions.cs" />    <Compile Include="src\IndexAttribute.cs" />    <Compile Include="src\ISqlProvider.cs" />    <Compile Include="src\MicrosoftSqlProvider.cs" />    <Compile Include="src\MySqlProvider.cs" />    <Compile Include="src\PostgreSqlProvider.cs" />    <Compile Include="src\PrimaryKeyAttribute.cs" />    <Compile Include="src\Query.cs" />    <Compile Include="src\SqliteProvider.cs" />    <Compile Include="src\TableAttribute.cs" />    <Compile Include="src\UniqueAttribute.cs" />    <Compile Include="src\OrderByDirection.cs" />    <Compile Include="src\DatabaseUri.cs" />    <Compile Include="src\SmartDaoException.cs" />    <Compile Include="src\MissingPrimaryKeyException.cs" />    <Compile Include="src\DataNotFoundException.cs" />    <Compile Include="src\TooMuchDataException.cs" />    <Compile Include="src\TooMuchDataFoundException.cs" />    <Compile Include="src\TooMuchDataUpdatedException.cs" />    <Compile Include="src\TooMuchDataRemovedException.cs" />    <Compile Include="src\DBNullable.cs" />    <Compile Include="src\SequenceAttribute.cs" />  </ItemGroup>  <ItemGroup>    <Reference Include="System.Data" />    <Reference Include="log4net, Version=1.2.9.0, Culture=neutral, PublicKeyToken=a5715cc6d5c3540b">      <Package>log4net</Package>    </Reference>    <Reference Include="System" />  </ItemGroup>  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />  <ProjectExtensions>    <MonoDevelop>      <Properties xmlns="">        <Deployment.LinuxDeployData generatePcFile="false" />      </Properties>    </MonoDevelop>  </ProjectExtensions></Project>
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="3.5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{29059DF9-2456-4410-B413-7049A280F04D}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Meebey.SmartDao</RootNamespace>
+    <ApplicationIcon>.</ApplicationIcon>
+    <AssemblyName>Meebey.SmartDao</AssemblyName>
+    <AssemblyOriginatorKeyFile>.</AssemblyOriginatorKeyFile>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\debug</OutputPath>
+    <DefineConstants>DEBUG,TRACE,LOG4NET</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <Externalconsole>true</Externalconsole>
+    <Execution>
+      <Execution clr-version="Net_2_0" />
+    </Execution>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <Execution>
+      <Execution clr-version="Net_2_0" />
+    </Execution>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="src\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="src\AnsiSqlProvider.cs" />
+    <Compile Include="src\AssemblyInfo.cs" />
+    <Compile Include="src\ColumnAttribute.cs" />
+    <Compile Include="src\DatabaseManager.cs" />
+    <Compile Include="src\ForeignKeyAttribute.cs" />
+    <Compile Include="src\GetOptions.cs" />
+    <Compile Include="src\IndexAttribute.cs" />
+    <Compile Include="src\ISqlProvider.cs" />
+    <Compile Include="src\MicrosoftSqlProvider.cs" />
+    <Compile Include="src\MySqlProvider.cs" />
+    <Compile Include="src\PostgreSqlProvider.cs" />
+    <Compile Include="src\PrimaryKeyAttribute.cs" />
+    <Compile Include="src\Query.cs" />
+    <Compile Include="src\SqliteProvider.cs" />
+    <Compile Include="src\TableAttribute.cs" />
+    <Compile Include="src\UniqueAttribute.cs" />
+    <Compile Include="src\OrderByDirection.cs" />
+    <Compile Include="src\DatabaseUri.cs" />
+    <Compile Include="src\SmartDaoException.cs" />
+    <Compile Include="src\MissingPrimaryKeyException.cs" />
+    <Compile Include="src\DataNotFoundException.cs" />
+    <Compile Include="src\TooMuchDataException.cs" />
+    <Compile Include="src\TooMuchDataFoundException.cs" />
+    <Compile Include="src\TooMuchDataUpdatedException.cs" />
+    <Compile Include="src\TooMuchDataRemovedException.cs" />
+    <Compile Include="src\DBNullable.cs" />
+    <Compile Include="src\SequenceAttribute.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Data" />
+    <Reference Include="log4net, Version=1.2.9.0, Culture=neutral, PublicKeyToken=a5715cc6d5c3540b">
+      <Package>log4net</Package>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="System" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Deployment.LinuxDeployData generatePcFile="false" />
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
+</Project>
