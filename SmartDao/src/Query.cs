@@ -228,12 +228,22 @@ namespace Meebey.SmartDao
                 var pkValue = property.GetValue(entry, null);
                 if (pkValue == null &&
                     f_SequenceColumns.Contains(pkColumn)) {
+                    // auto-generated key
                     isPrimaryKeySequence = true;
                     pkSequenceColumn = pkColumn;
                     // make sure to use the unboxed Nullable<> type here
                     pkSequenceColumnType = property.PropertyType.GetGenericArguments()[0];
                     break;
                 }
+                if (pkValue == null) {
+                    throw new InvalidOperationException(
+                        String.Format(
+                            "Primary key must not be empty for columns without sequence: {0}.",
+                            pkColumn
+                        )
+                    );
+                }
+                // manually generated key
                 pkValues.Add(pkColumn, pkValue);
             }
 
