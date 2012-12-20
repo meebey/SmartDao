@@ -13,7 +13,8 @@ namespace Meebey.SmartDao
 #endif
         private IDbConnection _DBConnection;
         private ISqlProvider  _SqlProvider;
-        
+        IDbTransaction Transaction { get; set; }
+
         public ISqlProvider SqlProvider {
             get {
                 return _SqlProvider;
@@ -290,6 +291,7 @@ namespace Meebey.SmartDao
             }
 
             IDbCommand command = _DBConnection.CreateCommand();
+            command.Transaction = Transaction;
             List<string> parameterNames = new List<string>();
             for (int idx = 0; idx < columnValues.Count; idx++) {
                 string parameterName = String.Format("{0}{1}", _SqlProvider.GetParameterCharacter(), idx);
@@ -422,6 +424,7 @@ namespace Meebey.SmartDao
             }
 
             IDbCommand command = _DBConnection.CreateCommand();
+            command.Transaction = Transaction;
             List<string> parameterNames = null;
             if (whereColumnNames != null) {
                 parameterNames = new List<string>(whereColumnNames.Count);
@@ -528,6 +531,12 @@ namespace Meebey.SmartDao
             
             string fullName = tableType.FullName;
             return fullName.Substring(fullName.LastIndexOf(".") + 1);
+        }
+
+        public virtual IDbTransaction BeginTransaction()
+        {
+            Transaction = DBConnection.BeginTransaction();
+            return Transaction;
         }
     }
 }
