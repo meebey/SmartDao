@@ -160,6 +160,8 @@ namespace Meebey.SmartDao
 
             PropertyInfo property;
             if (!f_ColumnToProperties.TryGetValue(columnName, out property)) {
+                // HACK
+                return;
                 throw new InvalidOperationException("Property for column could not be found: " + columnName);
             }
             if (!property.PropertyType.IsAssignableFrom(columnValue.GetType())) {
