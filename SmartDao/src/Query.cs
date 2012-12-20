@@ -140,7 +140,6 @@ namespace Meebey.SmartDao
                 string columnName = reader.GetName(i);
                 object columnValue = reader.GetValue(i);
 
-                //
                 SetPropertyValue(row, columnName, columnValue);
             }
 
