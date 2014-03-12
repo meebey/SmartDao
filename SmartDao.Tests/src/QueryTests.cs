@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Data.SqlClient;
 using NUnit.Framework;
 
@@ -7,25 +8,36 @@ namespace Meebey.SmartDao.Tests
     [TestFixture]
     public class QueryTests
     {
-        [Test]
-        public void Add()
+        DatabaseManager Manager { get; set; }
+        IDbConnection Connection { get; set; }
+
+        [SetUp]
+        protected void SetUp()
         {
             log4net.Config.BasicConfigurator.Configure();
 
-            var con = new SqlConnection("Server=mussolini.gsd-software.net;" +
-                                    "Database=test;" +
-                                    "User ID=test;" +
-                                    "Password=test;");
-            var provider = new MicrosoftSqlProvider();
+            Connection = MainClass.Connection;
+            var provider = MainClass.Provider;
 
-            con.Open();
-            DatabaseManager dbMan = new DatabaseManager(con, provider);
-            if (dbMan.TableExists(typeof(DBTest))) {
-                dbMan.DropTable(typeof(DBTest));
+            Manager = new DatabaseManager(Connection, provider);
+            Connection.Open();
+        }
+
+        [TearDown]
+        protected void TearDown()
+        {
+            Connection.Close();
+        }
+
+        [Test]
+        public void Add()
+        {
+            if (Manager.TableExists(typeof(DBTest))) {
+                Manager.DropTable(typeof(DBTest));
             }
-            dbMan.InitTable(typeof(DBTest));
+            Manager.InitTable(typeof(DBTest));
 
-            var query = dbMan.CreateQuery<DBTest>();
+            var query = Manager.CreateQuery<DBTest>();
             var entry = new DBTest();
             entry.StringColumn = "foobar123";
             entry.DateTimeColumnNotNullable = DateTime.UtcNow;
@@ -46,22 +58,12 @@ namespace Meebey.SmartDao.Tests
         [Test]
         public void AddWithPrimaryKeySequence()
         {
-            log4net.Config.BasicConfigurator.Configure();
-
-            var con = new SqlConnection("Server=mussolini.gsd-software.net;" +
-                                    "Database=test;" +
-                                    "User ID=test;" +
-                                    "Password=test;");
-            var provider = new MicrosoftSqlProvider();
-
-            con.Open();
-            DatabaseManager dbMan = new DatabaseManager(con, provider);
-            if (dbMan.TableExists(typeof(DBAutoPKTest))) {
-                dbMan.DropTable(typeof(DBAutoPKTest));
+            if (Manager.TableExists(typeof(DBAutoPKTest))) {
+                Manager.DropTable(typeof(DBAutoPKTest));
             }
-            dbMan.InitTable(typeof(DBAutoPKTest));
+            Manager.InitTable(typeof(DBAutoPKTest));
 
-            var query = dbMan.CreateQuery<DBAutoPKTest>();
+            var query = Manager.CreateQuery<DBAutoPKTest>();
             var entry = new DBAutoPKTest();
             entry.StringColumn = "foobar123";
 

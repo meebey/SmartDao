@@ -11,99 +11,105 @@ namespace Meebey.SmartDao.Tests
 {
     public class MainClass
     {
+        public static IDbConnection Connection { get; set; }
+        public static ISqlProvider Provider { get; set; }
+
+        static MainClass()
+        {
+            /*
+            Connection = new NpgsqlConnection("Server=localhost;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test");
+            Provider = new PostgreSqlProvider();
+            */
+            
+            /*
+            Connection = new NpgsqlConnection("Server=localhost;" +
+                                       "Port=5433;" +
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test");
+            Provider = new PostgreSqlProvider();
+            */
+            
+            /*
+            Connection = new MySqlConnection("Server=localhost;" +
+                                      "Database=test;" +
+                                      "User ID=root;");
+            Provider = new MySqlProvider();
+            */
+
+            /*
+            Connection = new SqliteConnection("Data Source=test.db;");
+            Provider = new SqliteProvider();
+            */
+
+            /*
+            Connection = new NpgsqlConnection("Server=mussolini.gsd-software.net;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            Provider = new PostgreSqlProvider();
+            */
+            
+            /*
+            Connection = new NpgsqlConnection("Server=192.168.8.113;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            Provider = new PostgreSqlProvider();
+            */
+            
+            /*
+            Connection = new NpgsqlConnection("Server=62.80.20.131;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            Provider = new PostgreSqlProvider();
+            */
+            
+            Connection = new SqlConnection("Server=mugabe.lan.gsd-software.net;" +
+                                    "Database=test;" +
+                                    "User ID=test;" +
+                                    "Password=test;");
+            Provider = new MicrosoftSqlProvider();
+
+            /*
+            Connection = new SqlConnection("Server=192.168.8.112;" + 
+                                    "Database=test;" +
+                                    "User ID=test;" +
+                                    "Password=test;");
+            Provider = new MicrosoftSqlProvider();
+            */
+
+            /*
+            Connection = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            Provider = new PostgreSqlProvider();
+            */
+
+            /*
+            Connection = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
+                                       "Database=test;" +
+                                       "User ID=test;" +
+                                       "Password=test;");
+            Provider = new PostgreSqlProvider();
+            */
+        }
+
         public static void Main(string[] args)
         {
 #if LOG4NET
             log4net.Config.BasicConfigurator.Configure();
 #endif
-            IDbConnection con;
-            ISqlProvider provider;
+            var con = Connection;
+            var provider = Provider;
             
-            /*
-            con = new NpgsqlConnection("Server=localhost;" + 
-                                       "Database=test;" +
-                                       "User ID=test;" +
-                                       "Password=test");
-            provider = new PostgreSqlProvider();
-            */
-            
-            /*
-            con = new NpgsqlConnection("Server=localhost;" +
-                                       "Port=5433;" +
-                                       "Database=test;" +
-                                       "User ID=test;" +
-                                       "Password=test");
-            provider = new PostgreSqlProvider();
-            */
-            
-            /*
-            con = new MySqlConnection("Server=localhost;" +
-                                      "Database=test;" +
-                                      "User ID=root;");
-            provider = new MySqlProvider();
-            */
 
-            /*
-            con = new SqliteConnection("Data Source=test.db;");
-            provider = new SqliteProvider();
-            */
-
-            /*
-            con = new NpgsqlConnection("Server=mussolini.gsd-software.net;" + 
-                                       "Database=test;" +
-                                       "User ID=test;" +
-                                       "Password=test;");
-            provider = new PostgreSqlProvider();
-            */
-            
-            /*
-            con = new NpgsqlConnection("Server=192.168.8.113;" + 
-                                       "Database=test;" +
-                                       "User ID=test;" +
-                                       "Password=test;");
-            provider = new PostgreSqlProvider();
-            */
-            
-            /*
-            con = new NpgsqlConnection("Server=62.80.20.131;" + 
-                                       "Database=test;" +
-                                       "User ID=test;" +
-                                       "Password=test;");
-            provider = new PostgreSqlProvider();
-            */
-            
-            con = new SqlConnection("Server=mussolini.gsd-software.net;" +
-                                    "Database=test;" +
-                                    "User ID=test;" +
-                                    "Password=test;");
-            provider = new MicrosoftSqlProvider();
-
-			/*
-            con = new SqlConnection("Server=192.168.8.112;" + 
-                                    "Database=test;" +
-                                    "User ID=test;" +
-                                    "Password=test;");
-            provider = new MicrosoftSqlProvider();
-            */
-
-            /*
-            con = new NpgsqlConnection("Server=lincoln.gsd-software.net;" + 
-                                       "Database=test;" +
-                                       "User ID=test;" +
-                                       "Password=test;");
-            provider = new PostgreSqlProvider();
-            */
-
-            /*
-            con = new NpgsqlConnection("Server=merkel.lan.gsd-software.net;" + 
-            //con = new NpgsqlConnection("Server=192.168.8.111;" + 
-                                       "Database=test;" +
-                                       "User ID=test;" +
-                                       "Password=test;");
-            provider = new PostgreSqlProvider();
-            */
-            
-            Console.WriteLine("--- " + con + " ---");
+            Console.WriteLine("--- {0} ({1}) ---", con, con.ConnectionString);
             Console.WriteLine("--- " + provider + " ---");
             //int count = 100000;
             int count = 100;
