@@ -73,8 +73,8 @@
   <ItemGroup>
     <Reference Include="System.Data" />
     <Reference Include="log4net, Version=1.2.9.0, Culture=neutral, PublicKeyToken=a5715cc6d5c3540b">
-      <Package>log4net</Package>
       <SpecificVersion>False</SpecificVersion>
+      <Package>log4net</Package>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>

@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartDao", "SmartDao\SmartDao.csproj", "{29059DF9-2456-4410-B413-7049A280F04D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartDao.Tests", "SmartDao.Tests\SmartDao.Tests.csproj", "{99848779-DB76-47E3-8CDC-8B500B01CDD3}"
