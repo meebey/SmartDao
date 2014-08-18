@@ -498,8 +498,14 @@ namespace Meebey.SmartDao
                 orderByColumns    = new List<string>(options.OrderBy.Count);
                 orderByDirections = new List<string>(options.OrderBy.Count);
                 foreach (KeyValuePair<string, OrderByDirection> entry in options.OrderBy) {
-                    // BUG: resolve property name to column name
-                    orderByColumns.Add(entry.Key);
+                    // resolve property name to column name
+                    var propertyName = entry.Key;
+                    string columnName;
+                    if (!f_PropertyToColumn.TryGetValue(propertyName, out columnName)) {
+                        throw new InvalidOperationException("Property for column in OrderBy could not be found: " + propertyName);
+                    }
+                    orderByColumns.Add(columnName);
+
                     string direction;
                     switch (entry.Value) {
                         case OrderByDirection.Ascending:
