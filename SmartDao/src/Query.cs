@@ -588,7 +588,9 @@ namespace Meebey.SmartDao
 #endif
                         // RDBMS doesn't support OFFSET, so emulate it
                         for (int i = 0; i < options.Offset; i++) {
-                            reader.Read();
+                            if (!reader.Read()) {
+                                break;
+                            }
                         }
                     }
                     while (reader.Read()) {
