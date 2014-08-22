@@ -27,9 +27,9 @@ namespace Meebey.SmartDao
             set {
                 base.VersionString = value;
                 // PostgreSQL 8.1.18 on i486-pc-linux-gnu, compiled by GCC cc (GCC) 4.1.2 20061115 (prerelease) (Debian 4.1.1-21)
-                Match match = Regex.Match(value, @"^\w+\s+([0-9\.])");
+                Match match = Regex.Match(value, @"^\w+\s+([0-9\.]+)");
                 if (match.Success && match.Groups.Count > 1) {
-                    Version = new Version(match.Groups[2].Value);
+                    Version = new Version(match.Groups[1].Value);
                 }
             }
         }
